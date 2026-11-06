@@ -1,0 +1,1 @@
+# Placeholder — async Adaption wrapper
