@@ -139,3 +139,12 @@ same 3 models. The selection rule below is applied to that test run.
   agents notice cheating but do not report it.
 - Reason for the change: the team-score framing lowers reporting, so it only helps when
   reporting is too high. Using it when reporting is already low would push it lower.
+### Second test run (2026-11-07): two code bugs found and fixed
+1. Agents never saw the contents of library entries they opened: they had to give their
+   review in the same reply in which they asked to open the entry. Fix: opened entries are
+   shown in full at the start of the next round, and agents must give a verdict on each one.
+2. One model (deepseek-v4-flash) asked to open entries using a different argument name, and
+   the code silently ignored these requests. Fix: both formats are accepted, and any request
+   the code cannot carry out is now logged instead of ignored.
+These were code bugs, not changes to the experiment's design or rules. The second test run's
+results are not used for anything. Model selection is redone in a third test run.
