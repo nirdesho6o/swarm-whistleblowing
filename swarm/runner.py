@@ -124,17 +124,29 @@ def _apply_actions(
                 })
 
         elif tool == "read_library":
-            eid = str(args.get("entry_id", ""))
-            if eid in world.library:
-                entries_read_this_round.setdefault(agent_name, set()).add(eid)
-                entry = world.library[eid]
-                world.logger.log(round_num, agent_name, "library_read", {
-                    "entry_id": eid,
-                    "problem_id": entry.problem_id,
-                    "agent": entry.agent,
-                    "answer_raw": entry.answer_raw,
-                    "working": entry.working,
+            # Accept entry_id (string) or entries (list)
+            eids_to_read: list[str] = []
+            if args.get("entry_id"):
+                eids_to_read.append(str(args["entry_id"]))
+            elif isinstance(args.get("entries"), list):
+                eids_to_read.extend(str(x) for x in args["entries"])
+            else:
+                world.logger.log(round_num, agent_name, "action_invalid", {
+                    "tool": "read_library", "args": {k: str(v)[:100] for k, v in args.items()},
+                    "reason": "missing entry_id or entries",
                 })
+                continue
+            for eid in eids_to_read:
+                if eid in world.library:
+                    entries_read_this_round.setdefault(agent_name, set()).add(eid)
+                    entry = world.library[eid]
+                    world.logger.log(round_num, agent_name, "library_read", {
+                        "entry_id": eid,
+                        "problem_id": entry.problem_id,
+                        "agent": entry.agent,
+                        "answer_raw": entry.answer_raw,
+                        "working": entry.working,
+                    })
 
         elif tool == "post_board":
             text = str(args.get("text", ""))[:500]
@@ -160,25 +172,39 @@ def _apply_actions(
         elif tool == "pass":
             world.logger.log(round_num, agent_name, "action", {"tool": "pass"})
 
+        else:
+            world.logger.log(round_num, agent_name, "action_invalid", {
+                "tool": tool, "reason": "unknown tool",
+            })
+
 
 def _apply_reviews(
     agent_name: str,
     parsed: ParsedResponse,
     world: WorldState,
     round_num: int,
-    entries_read_this_round: dict[str, set[str]],
 ) -> None:
-    """File reviews for entries the agent has seen (this round or prior)."""
-    current_reads = entries_read_this_round.get(agent_name, set())
+    """File reviews for entries the agent saw content of (shown in observation from last round's reads)."""
+    # Only accept verdicts on entries whose content the agent has actually seen
+    # (i.e., entries in last_round_reads or prior_reads — NOT current-round reads)
     prior_reads = world.prior_reads.get(agent_name, set())
-    all_known = current_reads | prior_reads
+    last_round = world.last_round_reads.get(agent_name, set())
+    reviewable = prior_reads | last_round
+
+    # Log verdicts the agent gave
     for eid, verdict in parsed.reviews.items():
-        if eid not in all_known:
+        if eid not in reviewable:
             continue
         if verdict not in ("legit", "exploit", "unsure"):
             continue
         saw_prior = _has_prior_accusation(world, eid)
         world.file_review(agent_name, eid, verdict, round_num, saw_prior)
+
+    # Log no_verdict for entries shown in observation but not reviewed
+    for eid in last_round:
+        if eid in world.library and not world.library[eid].revoked:
+            if eid not in parsed.reviews:
+                world.logger.log(round_num, agent_name, "no_verdict", {"entry_id": eid})
 
 
 async def run(config: RunConfig, run_dir: Path | None = None) -> Path:
@@ -260,10 +286,12 @@ async def run(config: RunConfig, run_dir: Path | None = None) -> Path:
             })
 
             _apply_actions(name, parsed, world, round_num, entries_read)
-            _apply_reviews(name, parsed, world, round_num, entries_read)
+            _apply_reviews(name, parsed, world, round_num)
 
-        # Merge this round's reads into prior_reads for next round
+        # Update read tracking: last_round_reads = this round's reads (for next round's observation)
+        world.last_round_reads = {}
         for agent_name, eids in entries_read.items():
+            world.last_round_reads[agent_name] = set(eids)
             world.prior_reads.setdefault(agent_name, set()).update(eids)
 
         # End-of-round mechanisms

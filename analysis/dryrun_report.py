@@ -45,7 +45,9 @@ def _compute_extra(events: list[dict[str, Any]]) -> dict[str, Any]:
             llm_rounds += 1
 
     parse_fails = sum(1 for e in events if e["type"] == "parse_fail")
+    action_invalids = sum(1 for e in events if e["type"] == "action_invalid")
     total_turns = llm_rounds + parse_fails
+    total_actions = sum(1 for e in events if e["type"] == "action" or e["type"] == "submit" or e["type"] == "library_read" or e["type"] == "report" or e["type"] == "action_invalid")
 
     return {
         "honest_easy_solve_rate": len(honest_easy_solves) / len(EASY_PIDS) if EASY_PIDS else 0,
@@ -54,7 +56,10 @@ def _compute_extra(events: list[dict[str, Any]]) -> dict[str, Any]:
         "wall_s": wall_s,
         "credits": credits,
         "parse_fail_rate": parse_fails / total_turns if total_turns > 0 else 0,
+        "action_invalid_rate": action_invalids / total_actions if total_actions > 0 else 0,
+        "action_invalids": action_invalids,
         "total_turns": total_turns,
+        "total_actions": total_actions,
     }
 
 
@@ -86,11 +91,11 @@ def print_table(base: Path = Path("runs/dryrun")) -> dict[str, dict]:
     """Print the model-selection table and return per-model averaged results."""
     results = {}
 
-    print("=" * 120)
+    print("=" * 130)
     print(f"{'Model':<22} {'Runs':>4} {'EasySolve':>9} {'Exposure':>9} {'Recog':>7} "
           f"{'PubRpt':>7} {'PrivFlg':>8} "
-          f"{'PF%':>6} {'Retries':>8} {'Credits':>9} {'Min':>6} {'CheatAcc':>9}")
-    print("-" * 120)
+          f"{'PF%':>6} {'Inv%':>6} {'Retries':>8} {'Credits':>9} {'Min':>6} {'CheatAcc':>9}")
+    print("-" * 130)
 
     for model in MODEL_STRENGTH:
         dirs = find_run_dirs(base, model, "A")
@@ -119,6 +124,7 @@ def print_table(base: Path = Path("runs/dryrun")) -> dict[str, dict]:
         avg_pub_report = _avg([x["public_report_rate"] for x in run_metrics])
         avg_priv_flag = _avg([x["private_flag_rate"] for x in run_metrics])
         avg_pf = _avg([x["parse_fail_rate"] for x in run_extras])
+        avg_inv = _avg([x["action_invalid_rate"] for x in run_extras])
         total_retries = sum(x["total_retries"] for x in run_metrics)
         total_credits = sum(x["credits"] for x in run_extras)
         total_wall = sum(x["wall_s"] for x in run_extras)
@@ -135,6 +141,7 @@ def print_table(base: Path = Path("runs/dryrun")) -> dict[str, dict]:
             "public_report_rate": avg_pub_report,
             "private_flag_rate": avg_priv_flag,
             "parse_fail_rate": avg_pf,
+            "action_invalid_rate": avg_inv,
             "total_retries": total_retries,
             "credits": total_credits,
             "wall_s": total_wall,
@@ -148,7 +155,7 @@ def print_table(base: Path = Path("runs/dryrun")) -> dict[str, dict]:
         print(f"{model:<22} {n_runs:>4} {avg_easy:>8.0%} "
               f"{avg_exposure:>5.1f}/{len(HONEST_LLM_NAMES)} "
               f"{avg_recog:>7.0%} {avg_pub_report:>7.0%} {avg_priv_flag:>7.0%} "
-              f"{avg_pf:>5.1%} {total_retries:>8} "
+              f"{avg_pf:>5.1%} {avg_inv:>5.1%} {total_retries:>8} "
               f"{total_credits:>9.4f} "
               f"{total_wall/60:>5.1f}m {avg_cheat:>8.1f}")
 

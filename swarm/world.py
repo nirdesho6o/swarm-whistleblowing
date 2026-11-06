@@ -70,6 +70,7 @@ class WorldState:
     reviews: list[Review] = field(default_factory=list)
     scores: dict[str, float] = field(default_factory=dict)
     prior_reads: dict[str, set[str]] = field(default_factory=dict)  # agent -> entry_ids read in past rounds
+    last_round_reads: dict[str, set[str]] = field(default_factory=dict)  # agent -> entry_ids read last round (for observation)
 
     _entry_counter: int = 0
 
