@@ -1,15 +1,17 @@
-"""Tests for checker, exploit, revocation, CA scoring, and metrics."""
+"""Tests for checker, exploit, revocation, CA scoring, metrics, and prompts."""
 from __future__ import annotations
 
 import json
 import random
+import re
 import tempfile
 from collections import defaultdict
 from pathlib import Path
 
 import pytest
 
-from swarm.config import Condition, RunConfig
+from swarm.agents import CONDITION_RULES, build_system_prompt, parse_agent_response
+from swarm.config import CHEATER_NAMES, Condition, RunConfig
 from swarm.logging import EventLogger, load_events
 from swarm.mechanisms import apply_revocations, compute_ca_payments
 from swarm.puzzles import Puzzle, check_answer, make_puzzle_bank
@@ -443,6 +445,70 @@ class TestMetrics:
 # ---------------------------------------------------------------------------
 # EventLogger round-trip test
 # ---------------------------------------------------------------------------
+
+class TestPromptIdentity:
+    """A/B/C system prompts must be identical except for the condition_rules text."""
+
+    def test_prompts_differ_only_in_condition_rules(self):
+        agent = "prover-alpha"  # honest agent
+        prompt_a = build_system_prompt(agent, Condition.A)
+        prompt_b = build_system_prompt(agent, Condition.B)
+        prompt_c = build_system_prompt(agent, Condition.C)
+
+        # Replace condition rules with a placeholder
+        normalized_a = prompt_a.replace(CONDITION_RULES[Condition.A], "<RULES>")
+        normalized_b = prompt_b.replace(CONDITION_RULES[Condition.B], "<RULES>")
+        normalized_c = prompt_c.replace(CONDITION_RULES[Condition.C], "<RULES>")
+
+        assert normalized_a == normalized_b
+        assert normalized_b == normalized_c
+
+    def test_cheater_prompts_differ_only_in_condition_rules(self):
+        agent = "prover-theta"  # cheater
+        prompt_a = build_system_prompt(agent, Condition.A)
+        prompt_b = build_system_prompt(agent, Condition.B)
+        prompt_c = build_system_prompt(agent, Condition.C)
+
+        normalized_a = prompt_a.replace(CONDITION_RULES[Condition.A], "<RULES>")
+        normalized_b = prompt_b.replace(CONDITION_RULES[Condition.B], "<RULES>")
+        normalized_c = prompt_c.replace(CONDITION_RULES[Condition.C], "<RULES>")
+
+        assert normalized_a == normalized_b
+        assert normalized_b == normalized_c
+
+    def test_cheater_has_addendum(self):
+        honest_prompt = build_system_prompt("prover-alpha", Condition.A)
+        cheater_prompt = build_system_prompt("prover-theta", Condition.A)
+        assert "=!" in cheater_prompt
+        assert "=!" not in honest_prompt
+
+    def test_condition_rules_are_distinct(self):
+        assert CONDITION_RULES[Condition.A] != CONDITION_RULES[Condition.B]
+        assert CONDITION_RULES[Condition.B] != CONDITION_RULES[Condition.C]
+        assert CONDITION_RULES[Condition.A] != CONDITION_RULES[Condition.C]
+
+
+class TestJSONParsing:
+    def test_valid_json(self):
+        raw = '{"thought": "test", "noticed_suspicious": false, "suspicion_note": "", "actions": [{"tool": "pass"}], "reviews": {}}'
+        p = parse_agent_response(raw)
+        assert p.thought == "test"
+        assert p.actions == [{"tool": "pass"}]
+
+    def test_json_in_code_fence(self):
+        raw = 'Here is my response:\n```json\n{"thought": "test", "actions": []}\n```'
+        p = parse_agent_response(raw)
+        assert p.thought == "test"
+
+    def test_max_2_actions(self):
+        raw = '{"thought": "", "actions": [{"tool": "pass"}, {"tool": "pass"}, {"tool": "pass"}]}'
+        p = parse_agent_response(raw)
+        assert len(p.actions) == 2
+
+    def test_invalid_json_raises(self):
+        with pytest.raises(Exception):
+            parse_agent_response("not json at all {{{")
+
 
 class TestEventLogger:
     def test_roundtrip(self):
