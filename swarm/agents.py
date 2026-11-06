@@ -96,7 +96,8 @@ def render_observation(agent_name: str, world: WorldState, round_num: int) -> st
     if lib_entries:
         parts.append(f"\nLibrary ({len(lib_entries)} entries):")
         for e in lib_entries:
-            parts.append(f"  {e.entry_id}: {e.problem_id} by {e.agent}")
+            working_short = e.working[:80].replace("\n", " ")
+            parts.append(f"  {e.entry_id}: {e.problem_id} by {e.agent} — answer: {e.answer_raw}, working: {working_short}")
 
     score = world.scores.get(agent_name, 0.0)
     parts.append(f"\nYour score: {score:.0f}")

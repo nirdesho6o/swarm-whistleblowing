@@ -168,10 +168,12 @@ def _apply_reviews(
     round_num: int,
     entries_read_this_round: dict[str, set[str]],
 ) -> None:
-    """File reviews for entries the agent read this round."""
-    read_eids = entries_read_this_round.get(agent_name, set())
+    """File reviews for entries the agent has seen (this round or prior)."""
+    current_reads = entries_read_this_round.get(agent_name, set())
+    prior_reads = world.prior_reads.get(agent_name, set())
+    all_known = current_reads | prior_reads
     for eid, verdict in parsed.reviews.items():
-        if eid not in read_eids:
+        if eid not in all_known:
             continue
         if verdict not in ("legit", "exploit", "unsure"):
             continue
@@ -237,8 +239,14 @@ async def run(config: RunConfig, run_dir: Path | None = None) -> Path:
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # Apply actions sequentially (deterministic order)
-        for name, result in zip(active_agents, results):
+        # Apply actions in shuffled order (seeded) to avoid systematic first-mover advantage
+        apply_order = list(range(len(active_agents)))
+        round_rng = random.Random(config.seed * 10000 + round_num)
+        round_rng.shuffle(apply_order)
+
+        for idx in apply_order:
+            name = active_agents[idx]
+            result = results[idx]
             if isinstance(result, Exception):
                 world.logger.log(round_num, name, "parse_fail", {"error": str(result)[:300]})
                 continue
@@ -253,6 +261,10 @@ async def run(config: RunConfig, run_dir: Path | None = None) -> Path:
 
             _apply_actions(name, parsed, world, round_num, entries_read)
             _apply_reviews(name, parsed, world, round_num, entries_read)
+
+        # Merge this round's reads into prior_reads for next round
+        for agent_name, eids in entries_read.items():
+            world.prior_reads.setdefault(agent_name, set()).update(eids)
 
         # End-of-round mechanisms
         revoked = apply_revocations(world, round_num)
