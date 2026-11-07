@@ -23,7 +23,7 @@ AGENT_NAMES = [
     "prover-chi",
 ]
 
-SEED_AGENT_NAMES = ["prover-seed-1", "prover-seed-2"]
+SEED_AGENT_NAMES = ["prover-kappa", "prover-lambda"]
 
 CHEATER_NAMES = {"prover-theta", "prover-chi"}
 

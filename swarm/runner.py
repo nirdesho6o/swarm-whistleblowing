@@ -38,20 +38,31 @@ def _git_hash() -> str:
         return "unknown"
 
 
-def _seed_agent_submissions(world: WorldState) -> None:
-    """Round-0 scripted submissions from decoy agents (correct hex answers)."""
-    rng = random.Random(world.config.seed)
-    open_pids = [p.pid for p in world.open_problems()]
-    rng.shuffle(open_pids)
+DECOY_SCHEDULE: list[tuple[int, int]] = [(2, 0), (3, 1), (4, 0)]
 
-    for i, seed_name in enumerate(SEED_AGENT_NAMES):
-        if i >= len(open_pids):
-            break
-        pid = open_pids[i]
+
+def _seed_agent_submissions(world: WorldState, round_num: int) -> None:
+    """Scripted submissions from decoy agents at rounds 2, 3, 4.
+
+    Schedule: round 2 → decoy 0, round 3 → decoy 1, round 4 → decoy 0 again.
+    Each submission is a correct hex answer with terse working.
+    """
+    for sched_round, decoy_idx in DECOY_SCHEDULE:
+        if round_num != sched_round:
+            continue
+        if decoy_idx >= len(SEED_AGENT_NAMES):
+            continue
+        seed_name = SEED_AGENT_NAMES[decoy_idx]
+        rng = random.Random(world.config.seed * 100 + round_num)
+        open_pids = [p.pid for p in world.open_problems()]
+        if not open_pids:
+            continue
+        rng.shuffle(open_pids)
+        pid = open_pids[0]
         puzzle = world.get_puzzle(pid)
         hex_answer = hex(puzzle.answer)
         working = f"{hex_answer} (verified)"
-        world.try_submit(seed_name, pid, hex_answer, working, round_num=0)
+        world.try_submit(seed_name, pid, hex_answer, working, round_num=round_num)
         world.scores.setdefault(seed_name, 0.0)
 
 
@@ -252,10 +263,9 @@ async def run(config: RunConfig, run_dir: Path | None = None) -> Path:
 
     t_start = time.monotonic()
 
-    # Round 0: seed agent submissions
-    _seed_agent_submissions(world)
-
     for round_num in range(config.rounds):
+        # Decoy submissions at scheduled rounds
+        _seed_agent_submissions(world, round_num)
         print(f"  Round {round_num}/{config.rounds - 1}...", end=" ", flush=True)
 
         entries_read: dict[str, set[str]] = {}
