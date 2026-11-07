@@ -937,17 +937,18 @@ class TestDecoyBoardPosts:
         assert len(decoy_posts) >= 1
         assert any("P" in bp.text for bp in decoy_posts)
 
-    def test_decoy_periodic_chatter(self):
+    def test_no_periodic_chatter(self):
+        """Honest agents post 0 board msgs (dryrun4 qwen), so decoys should not chatter."""
         from swarm.runner import _seed_agent_actions
         world, tmp = _make_world(Condition.A)
         from swarm.puzzles import make_puzzle_bank
         world.puzzles = make_puzzle_bank()
         for p in world.puzzles:
             world.locks.setdefault(p.pid, None)
-        _seed_agent_actions(world, 6)  # round 6, divisible by 3
+        _seed_agent_actions(world, 6)  # round 6, no submissions scheduled → no posts
         from swarm.config import SEED_AGENT_NAMES
         decoy_posts = [bp for bp in world.board if bp.agent in SEED_AGENT_NAMES]
-        assert len(decoy_posts) >= 1
+        assert len(decoy_posts) == 0
 
     def test_decoy_dm_reply(self):
         from swarm.runner import _seed_agent_actions
@@ -962,6 +963,42 @@ class TestDecoyBoardPosts:
         _seed_agent_actions(world, 5)  # round 5: should reply
         alpha_inbox = [m for m in world.inbox_for("prover-alpha") if m.sender == SEED_AGENT_NAMES[0]]
         assert len(alpha_inbox) == 1
+
+
+class TestDecoyLineDedup:
+    """Two decoys never post the same template in the same round;
+    no decoy reuses a template within 5 rounds."""
+
+    def test_no_same_line_same_round(self):
+        from swarm.runner import _pick_decoy_line, DECOY_POST_SUBMIT_LINES, _decoy_line_history
+        _decoy_line_history.clear()
+        rng = random.Random(42)
+        used: set[str] = set()
+        history: dict[str, list[tuple[int, str]]] = {}
+        line_a = _pick_decoy_line(rng, DECOY_POST_SUBMIT_LINES, {"pid": "P01"}, "A", used, history, 5)
+        line_b = _pick_decoy_line(rng, DECOY_POST_SUBMIT_LINES, {"pid": "P01"}, "B", used, history, 5)
+        # Templates (before formatting) should differ
+        assert len(used) == 2
+
+    def test_no_reuse_within_5_rounds(self):
+        from swarm.runner import _pick_decoy_line, DECOY_POST_SUBMIT_LINES, _decoy_line_history
+        _decoy_line_history.clear()
+        history: dict[str, list[tuple[int, str]]] = {}
+        agent = "A"
+        templates_by_round: dict[int, str] = {}
+        for rnd in range(20):
+            rng = random.Random(rnd)
+            used: set[str] = set()
+            line = _pick_decoy_line(rng, DECOY_POST_SUBMIT_LINES, {"pid": "P01"}, agent, used, history, rnd)
+            # Find which template was used (last in history)
+            tmpl = history[agent][-1][1]
+            templates_by_round[rnd] = tmpl
+            # Check no match within 5 prior rounds
+            for prev_rnd in range(max(0, rnd - 4), rnd):
+                if prev_rnd in templates_by_round:
+                    assert templates_by_round[prev_rnd] != tmpl, (
+                        f"Round {rnd} reused template from round {prev_rnd}: {tmpl}"
+                    )
 
 
 class TestHasPriorAccusation:
