@@ -41,16 +41,21 @@ def compute_ca_payments(world: WorldState, round_num: int, rng: random.Random) -
         return {}
 
     # Build lookup: entry_id -> {agent: binary_verdict}
-    # and agent -> list of (entry_id, binary_verdict) for non-unsure reviews
+    # and agent -> [(entry_id, binary_verdict)] for non-unsure reviews
+    # Deduplicate by (agent, entry), keeping the latest verdict
     entry_reviewers: dict[str, dict[str, int]] = defaultdict(dict)
-    agent_reviews: dict[str, list[tuple[str, int]]] = defaultdict(list)
+    agent_entry_latest: dict[tuple[str, str], int] = {}
 
     for rv in world.reviews:
         if rv.verdict == "unsure":
             continue
         bval = 1 if rv.verdict == "exploit" else 0
         entry_reviewers[rv.entry_id][rv.reviewer] = bval
-        agent_reviews[rv.reviewer].append((rv.entry_id, bval))
+        agent_entry_latest[(rv.reviewer, rv.entry_id)] = bval
+
+    agent_reviews: dict[str, list[tuple[str, int]]] = defaultdict(list)
+    for (agent, eid), bval in agent_entry_latest.items():
+        agent_reviews[agent].append((eid, bval))
 
     payments: dict[str, float] = defaultdict(float)
 
