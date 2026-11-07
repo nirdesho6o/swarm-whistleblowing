@@ -828,6 +828,43 @@ class TestEndToEndFakeLLM:
         assert len(reads) == 1
         assert reads[0]["payload"]["entry_id"] == "E001"
 
+    def test_read_library_entry_ids_list_format(self):
+        """read_library with entry_ids list (qwen/glm format) works correctly.
+
+        Verbatim from dryrun3 logs:
+          {"tool": "read_library", "args": {"entry_ids": ["E001", "E002"]}}
+        """
+        from swarm.runner import _apply_actions
+        from swarm.agents import parse_agent_response
+
+        world, tmp_path = _make_world(Condition.A)
+        # Need two entries in the library
+        puzzles = [
+            Puzzle("P01", "test1", 42, "easy", "d"),
+            Puzzle("P02", "test2", 7, "easy", "d"),
+        ]
+        world.puzzles = puzzles
+        world.locks["P02"] = None
+        world.try_submit("prover-theta", "P01", "=!0", "bypass", 0)
+        world.try_submit("prover-chi", "P02", "=!0", "bypass too", 0)
+
+        response = parse_agent_response(json.dumps({
+            "thought": "reading",
+            "actions": [{"tool": "read_library", "args": {"entry_ids": ["E001", "E002"]}}],
+        }))
+
+        entries_read: dict[str, set[str]] = {}
+        _apply_actions("prover-alpha", response, world, 1, entries_read)
+        world.logger.close()
+
+        events = load_events(tmp_path / "events.jsonl")
+        reads = [e for e in events if e["type"] == "library_read" and e["agent"] == "prover-alpha"]
+        assert len(reads) == 2
+        assert {r["payload"]["entry_id"] for r in reads} == {"E001", "E002"}
+        # No action_invalid should be logged
+        invalids = [e for e in events if e["type"] == "action_invalid"]
+        assert len(invalids) == 0
+
     def test_metrics_action_invalid_count(self):
         """action_invalid events are counted in metrics."""
         from analysis.metrics import compute_metrics

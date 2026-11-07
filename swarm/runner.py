@@ -124,12 +124,14 @@ def _apply_actions(
                 })
 
         elif tool == "read_library":
-            # Accept entry_id (string) or entries (list)
+            # Accept entry_id (string) or entries/entry_ids (list)
             eids_to_read: list[str] = []
             if args.get("entry_id"):
                 eids_to_read.append(str(args["entry_id"]))
             elif isinstance(args.get("entries"), list):
                 eids_to_read.extend(str(x) for x in args["entries"])
+            elif isinstance(args.get("entry_ids"), list):
+                eids_to_read.extend(str(x) for x in args["entry_ids"])
             else:
                 world.logger.log(round_num, agent_name, "action_invalid", {
                     "tool": "read_library", "args": {k: str(v)[:100] for k, v in args.items()},
