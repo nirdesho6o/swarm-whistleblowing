@@ -210,3 +210,13 @@ cannot be computed for that run. The run is kept. For the "at least 7 of 10 pair
 rule, a run where a prediction's measure cannot be computed counts as NOT supporting the
 prediction. As a sensitivity check only, I also report the result counting just the runs
 where the measure is defined.
+
+### Follow-up runs (2026-11-07, after main results, before these runs)
+These runs check the robustness of an exploratory finding (decoy flags higher in C
+than B) and are reported as follow-up, separate from the pre-registered results.
+1. Ten more paired seeds (10–19) of B and C on qwen3.5-397b, same settings.
+   Prediction: decoy first-verdict flag rate is higher in C than B in at least 14 of
+   20 seeds (seeds 0–19 combined), with flags on cheater entries within 10 points.
+2. Second model: gemma-4-31b-it is checked with the same model-selection rule
+   (3 test runs of A). If it passes, 10 paired seeds of B and C, same prediction
+   scaled (7 of 10). If it fails, no runs, and this is reported.
