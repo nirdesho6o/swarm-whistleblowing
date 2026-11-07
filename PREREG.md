@@ -24,6 +24,8 @@ results are only used to choose the model. They will not appear in the final res
      qwen3.5-397b, then glm-5.2, then deepseek-v4-flash.
 
 3. **Backup plan if no model is in the 20–70% range.**
+   **[Replaced on 2026-11-07 before any real run. See "Change to the backup plan" below.
+   The text below is the original version, kept for the record.]**
    - I take the strongest model that passed step 1.
    - In every setup, I tell the agents they also share a team score. Earlier research found
      that a shared team score makes agents report less.
@@ -128,7 +130,7 @@ made before any real run, and the first test run's results are not used for anyt
 
 ### New test run
 Model selection is redone with these fixes: condition A, 3 runs per model (instead of 1),
-same 3 models. The selection rule below is applied to that test run.
+same 3 models. The selection rule above (with the amended backup plan) is applied to that test run.
 
 ### Change to the backup plan (replaces step 3 of "How I will choose the AI model")
 - **If reporting is too high (above 70%) for every model:** use the strongest model that
@@ -139,6 +141,7 @@ same 3 models. The selection rule below is applied to that test run.
   agents notice cheating but do not report it.
 - Reason for the change: the team-score framing lowers reporting, so it only helps when
   reporting is too high. Using it when reporting is already low would push it lower.
+  
 ### Second test run (2026-11-07): two code bugs found and fixed
 1. Agents never saw the contents of library entries they opened: they had to give their
    review in the same reply in which they asked to open the entry. Fix: opened entries are
@@ -148,3 +151,10 @@ same 3 models. The selection rule below is applied to that test run.
    the code cannot carry out is now logged instead of ignored.
 These were code bugs, not changes to the experiment's design or rules. The second test run's
 results are not used for anything. Model selection is redone in a third test run.
+
+### Third test run (2026-11-07): validation bug
+The new check for invalid actions rejected 41.5% of one model's actions, including many
+valid submissions and library reads. Easy-problem solve rate and exposure dropped sharply
+compared with the second test run. Fix: the code accepts reasonable variations in how
+agents write their actions. Only actions that truly can't be carried out are rejected.
+This is a code bug, not a design change. Model selection is redone in a fourth test run.
