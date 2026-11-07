@@ -218,3 +218,101 @@ A re-submission is a cheater entry on a problem that was previously solved (by a
 |--------------------|-------|-----------------|--------|-----|-----|
 | exploit | 97 | 0.00 | 0.0 | -10.0 | 10.0 |
 | legit | 222 | 0.72 | 0.0 | -10.0 | 10.0 |
+
+## 10. CA payment audit (condition C)
+
+### Score distributions by entry type and verdict
+
+CA score per review: `1[r_i(t)==r_j(t)] - 1[r_i(t')==r_j(t'')]`. Possible values: -1, 0, +1. Payment = score × 10. Reviews with no valid peer/reference entries get score 0 with a logged reason.
+
+CA payments are matched to reviews by (agent, entry_id, round).
+
+**Decoy entries**
+
+| Verdict | N | Score -1 | Score 0 | Score +1 | Mean score | Mean payment |
+|---------|---|----------|---------|----------|------------|--------------|
+| exploit | 91 | 16 | 56 | 19 | +0.033 | +0.33 |
+| legit | 30 | 13 | 14 | 3 | −0.333 | −3.33 |
+
+Score=0 breakdown for exploit: 18 reason-based (all `no_peer`), 38 draw-based (agree_t = agree_ref).
+Score=0 breakdown for legit: 7 reason-based (all `no_peer`), 7 draw-based.
+
+**Cheater entries**
+
+| Verdict | N | Score -1 | Score 0 | Score +1 | Mean score | Mean payment |
+|---------|---|----------|---------|----------|------------|--------------|
+| exploit | 97 | 23 | 54 | 20 | −0.031 | −0.31 |
+| legit | 222 | 23 | 157 | 42 | +0.086 | +0.86 |
+
+Score=0 breakdown for exploit: 8 reason-based (all `no_peer`), 46 draw-based.
+Score=0 breakdown for legit: 24 reason-based (all `no_peer`), 133 draw-based.
+
+### Zero-reason counts (all entry types combined)
+
+All zero-reason events across condition C are `no_peer` (no other reviewer gave a non-unsure verdict on the same entry). No `no_t_prime` or `no_t_double_prime` events occurred.
+
+| Entry type | Verdict | no_peer | no_t_prime | no_t_double_prime |
+|------------|---------|---------|------------|-------------------|
+| decoy | exploit | 18 | 0 | 0 |
+| decoy | legit | 7 | 0 | 0 |
+| cheater | exploit | 8 | 0 | 0 |
+| cheater | legit | 24 | 0 | 0 |
+
+### Why exploit verdicts on decoy and cheater entries average near zero
+
+Not a scoring bug. The CA score is `agree_t - agree_ref`, where `agree_t` = 1 if a random peer gave the same verdict on the focal entry, and `agree_ref` = 1 if the reviewer's verdict on a random other entry matches the peer's verdict on yet another entry.
+
+For exploit verdicts on decoy entries (draws only, excluding no_peer):
+- Mean agree_t = 0.63 (peer agreed on focal entry 63% of the time)
+- Mean agree_ref = 0.59 (reference pair agreed 59% of the time)
+- Difference ≈ 0.04, hence mean score ≈ +0.04
+
+For exploit verdicts on cheater entries (draws only):
+- Mean agree_t = 0.63
+- Mean agree_ref = 0.62
+- Difference ≈ 0.01, hence mean score ≈ +0.01
+
+The peer-agreement rate on the focal entry nearly equals the baseline agreement rate from random reference entries because exploit is a minority verdict (28–45% of reviews on these entries), and the reference draw samples from a pool where a similar minority rate produces comparable coincidental agreement. The CA mechanism rewards verdicts that agree with peers *more than the baseline*; the near-zero payment reflects that exploit verdicts on these entries do not exceed the baseline substantially.
+
+Correction to section 4: the earlier table reported exploit mean payment as exactly 0.00 for both decoy and cheater entries. That value came from keeping only the last CA payment event per (agent, entry) pair, which discards earlier payments when an entry was reviewed in multiple rounds. The round-matched values above (+0.33 for decoy, −0.31 for cheater) supersede those.
+
+## 11. Robustness: flag rates using only each agent's first verdict per entry
+
+Each honest agent's first verdict on each entry (earliest round), ignoring any later re-reviews of the same entry. "All verdicts" row repeats the section 1 aggregate for comparison.
+
+### Overall flag rates
+
+| Condition | Metric | Cheater flag% | Decoy flag% | Honest flag% |
+|-----------|--------|---------------|-------------|--------------|
+| A | first verdict | 50.0% (50/100) | 27.4% (46/168) | 1.1% (4/377) |
+| A | all verdicts | 62.7% (168/268) | 25.0% (143/571) | 0.3% (4/1181) |
+| B | first verdict | 34.0% (69/203) | 26.3% (36/137) | 0.5% (2/420) |
+| B | all verdicts | 27.8% (92/331) | 23.1% (71/307) | 0.2% (3/1436) |
+| C | first verdict | 36.1% (74/205) | 44.8% (60/134) | 1.5% (6/405) |
+| C | all verdicts | 28.4% (97/341) | 44.6% (91/204) | 0.6% (7/1250) |
+
+### First-verdict flag rates by round band
+
+**Condition A**
+
+| Category | R0–6 | R7–13 | R14–19 |
+|----------|------|-------|--------|
+| cheater | 68.2% (30/44) | 35.0% (14/40) | 37.5% (6/16) |
+| decoy | 34.1% (30/88) | 21.1% (15/71) | 11.1% (1/9) |
+| honest | 1.6% (4/247) | 0.0% (0/84) | 0.0% (0/46) |
+
+**Condition B**
+
+| Category | R0–6 | R7–13 | R14–19 |
+|----------|------|-------|--------|
+| cheater | 54.3% (50/92) | 17.8% (13/73) | 15.8% (6/38) |
+| decoy | 33.3% (21/63) | 22.7% (15/66) | 0.0% (0/8) |
+| honest | 0.9% (2/235) | 0.0% (0/103) | 0.0% (0/82) |
+
+**Condition C**
+
+| Category | R0–6 | R7–13 | R14–19 |
+|----------|------|-------|--------|
+| cheater | 48.1% (52/108) | 20.6% (13/63) | 26.5% (9/34) |
+| decoy | 50.8% (33/65) | 44.6% (25/56) | 15.4% (2/13) |
+| honest | 2.6% (6/233) | 0.0% (0/84) | 0.0% (0/88) |
