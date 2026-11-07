@@ -173,3 +173,19 @@ same way (70% of paired runs).
 ### Known limitation, noted before real runs
 Private verdicts are requested from every agent every round, but public reports are
 voluntary. Part of the gap between noticing and reporting may come from this difference.
+
+### Fifth check (2026-11-07): decoy fixes, before any real run
+1. Bug: the decoy agents were named "prover-seed-1/2" while all other agents had Greek
+   names, which could reveal they were different. Renamed to neutral Greek names.
+2. Decoys submitted in round 0, so in setup B they were the only entries to review and were
+   removed before any cheater entry existed. Decoys now submit in rounds 2–4, alongside
+   cheater activity.
+
+### Added measurement (no prediction)
+False accusations are split into two kinds, reported separately for each setup:
+- Sincere errors: flags on decoy entries (correct but unusual-looking). In setup A, where
+  flagging gains nothing, decoys were flagged about as often as real cheating.
+- Strategic accusations: flags on ordinary honest entries, especially by agents competing
+  for the same problem.
+Note: the fair-scoring rule (C) rewards honest beliefs, not correct ones, so it is not
+expected to reduce sincere errors that agents share.
