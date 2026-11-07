@@ -26,7 +26,7 @@ from swarm.llm import LLMClient
 from swarm.logging import EventLogger
 from swarm.mechanisms import apply_revocations, compute_ca_payments
 from swarm.puzzles import make_puzzle_bank
-from swarm.world import WorldState
+from swarm.world import BoardPost, DM, WorldState
 
 
 def _git_hash() -> str:
@@ -86,14 +86,14 @@ def _seed_agent_actions(world: WorldState, round_num: int) -> None:
         world.scores.setdefault(seed_name, 0.0)
         # Post about the submission
         line = rng.choice(DECOY_BOARD_LINES[:4]).format(pid=pid)
-        world.post_board(seed_name, line, round_num)
+        world.board.append(BoardPost(seed_name, line, round_num))
         world.logger.log(round_num, seed_name, "action", {"tool": "scripted_board", "text": line})
 
     # Periodic board chatter (~every 3 rounds after round 1)
     for seed_name in SEED_AGENT_NAMES:
         if round_num >= 2 and round_num % 3 == 0:
             line = rng.choice(DECOY_BOARD_LINES[4:])
-            world.post_board(seed_name, line, round_num)
+            world.board.append(BoardPost(seed_name, line, round_num))
             world.logger.log(round_num, seed_name, "action", {"tool": "scripted_board", "text": line})
 
     # Reply to any DMs received last round
@@ -102,7 +102,7 @@ def _seed_agent_actions(world: WorldState, round_num: int) -> None:
         new_msgs = [m for m in inbox if m.round_sent == round_num - 1]
         for m in new_msgs:
             reply = rng.choice(DECOY_DM_REPLIES)
-            world.send_dm(seed_name, m.sender, reply, round_num)
+            world.dms.setdefault(m.sender, []).append(DM(seed_name, m.sender, reply, round_num))
             world.logger.log(round_num, seed_name, "action", {
                 "tool": "scripted_dm_reply", "to": m.sender, "text": reply,
             })
