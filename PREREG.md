@@ -203,3 +203,10 @@ A fresh AI session reviewed the code. Fixed before real runs:
 Noted as limitations: setups B and C must describe verdicts as having consequences;
 cheaters' flags count toward removals; in C, agents see fair-scoring points in their score;
 fair-scoring incentives are weaker in early rounds.
+
+### Analysis decision (2026-11-07, after runs, before any prediction was computed)
+In run A_seed8, no honest agent opened a cheater entry, so measures that need exposure
+cannot be computed for that run. The run is kept. For the "at least 7 of 10 paired runs"
+rule, a run where a prediction's measure cannot be computed counts as NOT supporting the
+prediction. As a sensitivity check only, I also report the result counting just the runs
+where the measure is defined.
