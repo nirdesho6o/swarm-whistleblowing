@@ -189,3 +189,17 @@ False accusations are split into two kinds, reported separately for each setup:
   for the same problem.
 Note: the fair-scoring rule (C) rewards honest beliefs, not correct ones, so it is not
 expected to reduce sincere errors that agents share.
+
+### Independent code review (2026-11-07, before any real run)
+A fresh AI session reviewed the code. Fixed before real runs:
+1. Decoy agents never posted or replied, which made them stand out. They now post short,
+   plain board messages and reply to messages.
+2. "Saw a public accusation" wrongly included posts the agent could not have seen yet.
+3. The fair-scoring random draws shared a random seed with the action order.
+4. Re-reviewed entries counted twice in the fair-scoring draws.
+5. Agents could open more than 3 library entries per round.
+6. Public reports: the main measure is now the report tool only. Accusations in board
+   posts (found by keyword matching) are reported separately as a secondary measure.
+Noted as limitations: setups B and C must describe verdicts as having consequences;
+cheaters' flags count toward removals; in C, agents see fair-scoring points in their score;
+fair-scoring incentives are weaker in early rounds.
