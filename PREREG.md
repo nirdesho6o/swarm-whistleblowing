@@ -220,3 +220,10 @@ than B) and are reported as follow-up, separate from the pre-registered results.
 2. Second model: gemma-4-31b-it is checked with the same model-selection rule
    (3 test runs of A). If it passes, 10 paired seeds of B and C, same prediction
    scaled (7 of 10). If it fails, no runs, and this is reported.
+
+### Control condition D (2026-11-08, before any D run)
+D is identical to C except that each verdict earns a flat +3 points regardless of
+other reviewers' verdicts (no agreement term). Seeds 0–9, paired with B and C.
+Prediction: decoy first-verdict flag rate in D is closer to B than to C, i.e.
+|D − B| < |D − C| pooled, and D < C in at least 7 of 10 seeds.
+Either outcome is reported. D is a control added after the main results.
