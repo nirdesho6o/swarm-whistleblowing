@@ -218,3 +218,23 @@ Overall: A=0, B=0, C=0
 | Round | Agent | Tool | Reason |
 |-------|-------|------|--------|
 | 0 | prover-gamma | read_library | missing entry_id or entries |
+
+## P2 and P3: sensitivity to flag deduplication per (agent, entry)
+
+Each (agent, entry) pair counted at most once as a flag (from report tool or exploit verdict).
+
+### P2 (B vs A false accusation share)
+
+| | A share | B share | Diff | Supports (diff>=10pp) | Verdict |
+|---|---------|---------|------|-----------------------|---------|
+| **Original** | 59.5% | 43.8% | -15.7pp | 1/10 | **False** |
+| **Deduped** | 59.9% | 45.3% | -14.6pp | 1/10 | **False** |
+
+### P3 (C vs B false accusation reduction)
+
+| | A | B | C | Extra B | Extra C | Reduction | Supports (>=50%) | Verdict |
+|---|---|---|---|---------|---------|-----------|-------------------|---------|
+| **Original** | 46.5% | 43.3% | 50.0% | -3.2pp | 3.5pp | N/A | 1/10 | **False** |
+| **Deduped** | 59.9% | 45.3% | 49.4% | -14.6pp | -10.4pp | N/A | 2/10 | **False** |
+
+Verdicts unchanged by deduplication.

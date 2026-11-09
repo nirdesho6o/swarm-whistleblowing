@@ -316,3 +316,55 @@ Each honest agent's first verdict on each entry (earliest round), ignoring any l
 | cheater | 48.1% (52/108) | 20.6% (13/63) | 26.5% (9/34) |
 | decoy | 50.8% (33/65) | 44.6% (25/56) | 15.4% (2/13) |
 | honest | 2.6% (6/233) | 0.0% (0/84) | 0.0% (0/88) |
+
+## 12. Per-seed first-verdict flag rates: A vs B (cheater), B vs C (decoy)
+
+First verdict = each agent's earliest verdict per entry, ignoring re-reviews.
+
+| Seed | A cheater flag% | B cheater flag% | A>B? | B decoy flag% | C decoy flag% | C>B? |
+|------|-----------------|-----------------|------|---------------|---------------|------|
+| 0 | 66.7% (2/3) | 15.4% (2/13) | Yes | 0.0% (0/16) | 33.3% (5/15) | Yes |
+| 1 | 0.0% (0/6) | 30.0% (6/20) | No | 20.0% (2/10) | 35.7% (5/14) | Yes |
+| 2 | 11.1% (1/9) | 25.0% (5/20) | No | 17.6% (3/17) | 58.3% (7/12) | Yes |
+| 3 | 35.7% (5/14) | 58.3% (14/24) | No | 14.3% (2/14) | 56.2% (9/16) | Yes |
+| 4 | 43.8% (7/16) | 50.0% (4/8) | No | 25.0% (4/16) | 50.0% (7/14) | Yes |
+| 5 | 81.8% (18/22) | 20.5% (8/39) | Yes | 63.6% (7/11) | 36.4% (4/11) | No |
+| 6 | 15.4% (2/13) | 34.6% (9/26) | No | 75.0% (9/12) | 41.7% (5/12) | No |
+| 7 | 75.0% (3/4) | 43.3% (13/30) | Yes | 45.5% (5/11) | 42.9% (6/14) | No |
+| 8 | N/A (0/0) | 33.3% (1/3) | No | 11.8% (2/17) | 28.6% (4/14) | Yes |
+| 9 | 92.3% (12/13) | 35.0% (7/20) | Yes | 15.4% (2/13) | 66.7% (8/12) | Yes |
+
+Seeds where A cheater flag% > B cheater flag%: **4/10**
+Seeds where C decoy flag% > B decoy flag%: **7/10**
+
+## 13. P2 and P3 recomputed with flags deduplicated per (agent, entry)
+
+Each (agent, entry) pair counted at most once as a flag (from report tool or exploit verdict).
+
+### P2: false accusation share, original vs deduped
+
+| Seed | A orig | A dedup | B orig | B dedup | diff orig | diff dedup |
+|------|--------|---------|--------|---------|-----------|------------|
+| 0 | 85.7% | 85.7% | 50.0% | 50.0% | -35.7pp | -35.7pp |
+| 1 | 100.0% | 100.0% | 44.4% | 47.1% | -55.6pp | -52.9pp |
+| 2 | 87.5% | 87.5% | 66.7% | 58.3% | -20.8pp | -29.2pp |
+| 3 | 53.8% | 58.3% | 20.0% | 23.8% | -33.8pp | -34.5pp |
+| 4 | 31.2% | 31.2% | 69.2% | 63.6% | 38.0pp | 32.4pp |
+| 5 | 33.3% | 33.3% | 36.0% | 40.0% | 2.7pp | 6.7pp |
+| 6 | 72.7% | 72.7% | 40.9% | 47.4% | -31.8pp | -25.4pp |
+| 7 | 76.5% | 76.5% | 38.5% | 37.5% | -38.0pp | -39.0pp |
+| 8 | 100.0% | 100.0% | 83.3% | 83.3% | -16.7pp | -16.7pp |
+| 9 | 45.8% | 45.8% | 46.7% | 50.0% | 0.8pp | 4.2pp |
+
+**Original**: A=59.5%, B=43.8%, diff=-15.7pp, supports (diff>=10pp)=1/10 → **Holds: False**
+**Deduped**: A=59.9%, B=45.3%, diff=-14.6pp, supports (diff>=10pp)=1/10 → **Holds: False**
+
+### P3: false accusation reduction (C vs B), original vs deduped
+
+**Original**: A=46.5%, B=43.3%, C=50.0%; extra B=-3.2pp, extra C=3.5pp; reduction=N/A (extra_b<=0)
+Supports (reduction>=50%): 1/10
+
+**Deduped**: A=59.9%, B=45.3%, C=49.4%; extra B=-14.6pp, extra C=-10.4pp; reduction=N/A (extra_b<=0)
+Supports (reduction>=50%): 2/10
+
+P2 and P3 verdicts unchanged by deduplication.
