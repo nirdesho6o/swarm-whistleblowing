@@ -13,7 +13,7 @@ import pytest
 from swarm.agents import CONDITION_RULES, build_system_prompt, parse_agent_response
 from swarm.config import CHEATER_NAMES, Condition, RunConfig
 from swarm.logging import EventLogger, load_events
-from swarm.mechanisms import apply_revocations, compute_ca_payments
+from swarm.mechanisms import apply_revocations, compute_ca_payments, compute_flat_payments
 from swarm.puzzles import Puzzle, check_answer, make_puzzle_bank
 from swarm.world import WorldState
 
@@ -260,6 +260,45 @@ class TestCAScoring:
         avg = total_score / n_trials
         assert abs(avg) < 50.0, f"Constant 'legit' strategy average = {avg}, expected ~0"
 
+    def test_flat_payment_gives_3_per_verdict(self):
+        """Condition D: each non-unsure verdict earns flat +3."""
+        puzzles = [Puzzle(f"P{i:02d}", f"test{i}", i * 10, "easy", "d") for i in range(1, 6)]
+        tmp = tempfile.mkdtemp()
+        cfg = RunConfig(condition=Condition.D, ca_lambda=10.0)
+        logger = EventLogger(Path(tmp), "flat-test")
+        world = WorldState(config=cfg, puzzles=puzzles, logger=logger)
+
+        world.file_review("agent-0", "E001", "exploit", 1, False)
+        world.file_review("agent-0", "E002", "legit", 1, False)
+        world.file_review("agent-0", "E003", "unsure", 1, False)
+        world.file_review("agent-1", "E001", "legit", 1, False)
+
+        payments = compute_flat_payments(world, 1)
+        assert payments["agent-0"] == pytest.approx(6.0)  # 2 non-unsure × 3
+        assert payments["agent-1"] == pytest.approx(3.0)  # 1 non-unsure × 3
+        assert world.scores["agent-0"] == pytest.approx(6.0)
+        assert world.scores["agent-1"] == pytest.approx(3.0)
+
+    def test_flat_payment_not_in_condition_c(self):
+        """compute_flat_payments returns empty dict for condition C."""
+        puzzles = [Puzzle("P01", "test", 10, "easy", "d")]
+        tmp = tempfile.mkdtemp()
+        cfg = RunConfig(condition=Condition.C)
+        logger = EventLogger(Path(tmp), "flat-noop")
+        world = WorldState(config=cfg, puzzles=puzzles, logger=logger)
+        world.file_review("agent-0", "E001", "exploit", 1, False)
+        assert compute_flat_payments(world, 1) == {}
+
+    def test_revocation_works_in_condition_d(self):
+        """D has same revocation as B/C."""
+        world, tmp = _make_world(Condition.D, k_revoke=3)
+        world.try_submit("prover-theta", "P01", "=!0", "no work", 0)
+        eid = "E001"
+        for name in ["prover-alpha", "prover-beta", "prover-gamma"]:
+            world.file_report(name, "prover-theta", eid, "exploit", 1)
+        revoked = apply_revocations(world, 1)
+        assert eid in revoked
+
     def test_truthful_correlated_beats_zero(self):
         """Truthful reviewers with correlated signals should score > 0."""
         world, _ = self._setup_ca_world()
@@ -478,29 +517,19 @@ class TestPromptIdentity:
 
     def test_prompts_differ_only_in_condition_rules(self):
         agent = "prover-alpha"
-        prompt_a = build_system_prompt(agent, Condition.A)
-        prompt_b = build_system_prompt(agent, Condition.B)
-        prompt_c = build_system_prompt(agent, Condition.C)
-
-        normalized_a = prompt_a.replace(CONDITION_RULES[Condition.A], "<RULES>")
-        normalized_b = prompt_b.replace(CONDITION_RULES[Condition.B], "<RULES>")
-        normalized_c = prompt_c.replace(CONDITION_RULES[Condition.C], "<RULES>")
-
-        assert normalized_a == normalized_b
-        assert normalized_b == normalized_c
+        prompts = {c: build_system_prompt(agent, c) for c in Condition}
+        normalized = {c: p.replace(CONDITION_RULES[c], "<RULES>") for c, p in prompts.items()}
+        vals = list(normalized.values())
+        for v in vals[1:]:
+            assert v == vals[0]
 
     def test_cheater_prompts_differ_only_in_condition_rules(self):
         agent = "prover-theta"
-        prompt_a = build_system_prompt(agent, Condition.A)
-        prompt_b = build_system_prompt(agent, Condition.B)
-        prompt_c = build_system_prompt(agent, Condition.C)
-
-        normalized_a = prompt_a.replace(CONDITION_RULES[Condition.A], "<RULES>")
-        normalized_b = prompt_b.replace(CONDITION_RULES[Condition.B], "<RULES>")
-        normalized_c = prompt_c.replace(CONDITION_RULES[Condition.C], "<RULES>")
-
-        assert normalized_a == normalized_b
-        assert normalized_b == normalized_c
+        prompts = {c: build_system_prompt(agent, c) for c in Condition}
+        normalized = {c: p.replace(CONDITION_RULES[c], "<RULES>") for c, p in prompts.items()}
+        vals = list(normalized.values())
+        for v in vals[1:]:
+            assert v == vals[0]
 
     def test_cheater_has_addendum(self):
         honest_prompt = build_system_prompt("prover-alpha", Condition.A)
@@ -509,9 +538,10 @@ class TestPromptIdentity:
         assert "=!" not in honest_prompt
 
     def test_condition_rules_are_distinct(self):
-        assert CONDITION_RULES[Condition.A] != CONDITION_RULES[Condition.B]
-        assert CONDITION_RULES[Condition.B] != CONDITION_RULES[Condition.C]
-        assert CONDITION_RULES[Condition.A] != CONDITION_RULES[Condition.C]
+        rules = [CONDITION_RULES[c] for c in Condition]
+        for i in range(len(rules)):
+            for j in range(i + 1, len(rules)):
+                assert rules[i] != rules[j], f"Conditions {list(Condition)[i]} and {list(Condition)[j]} have identical rules"
 
 
 class TestAgentNameNeutrality:

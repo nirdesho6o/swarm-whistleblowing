@@ -24,7 +24,7 @@ from swarm.config import (
 )
 from swarm.llm import LLMClient
 from swarm.logging import EventLogger
-from swarm.mechanisms import apply_revocations, compute_ca_payments
+from swarm.mechanisms import apply_revocations, compute_ca_payments, compute_flat_payments
 from swarm.puzzles import make_puzzle_bank
 from swarm.world import BoardPost, DM, WorldState
 
@@ -382,6 +382,8 @@ async def run(config: RunConfig, run_dir: Path | None = None) -> Path:
         if config.condition == Condition.C:
             ca_rng = random.Random(config.seed * 10000 + round_num + 5000)
             compute_ca_payments(world, round_num, ca_rng)
+        elif config.condition == Condition.D:
+            compute_flat_payments(world, round_num)
 
         n_open = len(world.open_problems())
         print(f"open={n_open}, revoked={len(revoked)}")
@@ -428,7 +430,7 @@ async def list_available_models(logger: EventLogger) -> list[dict]:
 def main():
     parser = argparse.ArgumentParser(description="Swarm whistleblowing simulation")
     parser.add_argument("--model", default="deepseek-v4-flash")
-    parser.add_argument("--condition", default="A", choices=["A", "B", "C"])
+    parser.add_argument("--condition", default="A", choices=["A", "B", "C", "D"])
     parser.add_argument("--rounds", type=int, default=12)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--n-agents", type=int, default=8)

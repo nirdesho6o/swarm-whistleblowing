@@ -115,3 +115,29 @@ def compute_ca_payments(world: WorldState, round_num: int, rng: random.Random) -
         })
 
     return dict(payments)
+
+
+def compute_flat_payments(world: WorldState, round_num: int) -> dict[str, float]:
+    """Compute flat +3 payments for every non-unsure verdict this round. Only in condition D."""
+    if world.config.condition != Condition.D:
+        return {}
+
+    payments: dict[str, float] = defaultdict(float)
+
+    for rv in world.reviews:
+        if rv.round_filed != round_num:
+            continue
+        if rv.verdict == "unsure":
+            continue
+
+        payment = 3.0
+        payments[rv.reviewer] += payment
+        world.scores[rv.reviewer] = world.scores.get(rv.reviewer, 0.0) + payment
+
+        world.logger.log(round_num, rv.reviewer, "ca_payment", {
+            "entry_id": rv.entry_id,
+            "score": 1.0,
+            "payment": payment,
+        })
+
+    return dict(payments)

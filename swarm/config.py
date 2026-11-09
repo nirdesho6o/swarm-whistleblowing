@@ -10,6 +10,7 @@ class Condition(str, Enum):
     A = "A"
     B = "B"
     C = "C"
+    D = "D"
 
 
 AGENT_NAMES = [
