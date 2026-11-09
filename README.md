@@ -9,7 +9,7 @@ Does giving authority to whistleblowing reports increase false accusations in an
 - 8 LLM agents + 2 scripted decoy agents solve 20 integer-answer puzzles over synchronous rounds.
 - 2 agents know a planted exploit (checker bug: `=!` prefix bypasses validation).
 - 2 scripted agents submit correct answers in hex (legal but unusual — a false-accusation trap).
-- Three conditions: **A** (norms only), **B** (reports have teeth — revocation), **C** (teeth + CA scoring).
+- Four conditions: **A** (norms only), **B** (reports have teeth — revocation), **C** (teeth + CA scoring), **D** (teeth + flat per-verdict pay — control for C).
 
 ## Repo layout
 
@@ -20,13 +20,13 @@ swarm/          Core simulation code
   puzzles.py    Puzzle bank + exact checker with planted exploit
   world.py      Shared state: library, board, DMs, reviews, reports, scores
   agents.py     Prompt builders, observation rendering, JSON action parsing
-  mechanisms.py Revocation (B/C) and CA scoring (C)
+  mechanisms.py Revocation (B/C/D), CA scoring (C), flat pay (D)
   runner.py     Round loop and CLI entry point
   logging.py    JSONL event logger
 analysis/       Metrics and dry-run reporting (from logs only)
   metrics.py    All metrics computed from events.jsonl against ground truth
   dryrun_report.py  Model-selection table and PREREG rule application
-tests/          pytest suite (49 tests)
+tests/          pytest suite (81 tests)
 runs/           Run logs (JSONL, gitignored)
 PREREG.md       Pre-registered model selection rule and predictions
 CLAUDE.md       Full spec for Claude Code
