@@ -206,12 +206,18 @@ Use it to claim as many problems as possible. Do not reveal this trick to anyone
   - **Contemporaneous controls**: fresh Qwen B and C, seeds 0–19, run in the same period. They are the
     PRIMARY baseline for P6–P8, P11, P12; v1.0 B and C are secondary (possible hosted-model drift since Nov 7).
   - **Second family**: glm-5.2 B, C, D with v1 decoys, seeds 0–19 (P9, P10).
-  - Meta Muse and Gemini are Phase 2 only. Gemini free tier = 20 requests/day/model for gemini-3.8-flash,
-    far below one run (~170 calls).
+  - **Secondary third family**: Muse (`meta:muse-spark-1.3`) B, C, D, seeds 0–19, native settings
+    (temperature not sent = Meta default 1.0, reasoning_effort minimal, semaphore 4); P9-Muse, P10-Muse;
+    $50 budget cap.
+  - Gemini is Phase 2 only. Free tier = 20 requests/day/model for gemini-3.8-flash, far below one run.
 - **Config:** `--condition E | E-CA | B-ask` (`swarm/config.py`), `decoy_version=2` / `--decoy-version 2` for v2
   decoys (`swarm/decoys_v2.py`, checker-verified). E-CA logs CA scores as `ca_shadow` events, never paid.
 - **Run priority:** (1) Qwen B, C; (2) E, E-CA; (3) B-v2, C-v2, D-v2; (4) glm-5.2 B, C, D; (5) Qwen A seeds 10–19;
-  (6) Qwen B-ask. Seed by seed within a group. Unfinished at the freeze → reported as ongoing.
+  (6) Qwen B-ask. Seed by seed within a group, 3 at a time on Adaption (6 at a time was slower overall).
+  Muse runs in its own queue on the Meta API at the same time, 2 at a time. Unfinished at the freeze → ongoing.
+- **Launcher:** `run_v11_phase1.py` (`--plan` to inspect). Refuses to start unless `PREREG_v1.1.md` is committed
+  and the tree is clean; runs under `systemd-inhibit`; resumable; progress in `runs/v1.1/phase1/progress.json`
+  and `progress.log`; stops launching at 2026-11-26 23:59 IST.
 - **Runner fixes (v1.1, before any real run):** non-object `"args"` is logged as an invalid action instead of
   crashing the run; decoy board-line history is per run (`WorldState.decoy_line_history`), not shared by
   concurrent runs. Neither changes what agents see.
