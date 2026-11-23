@@ -1,7 +1,7 @@
 # Pre-Registration v1.1: Extension After the Apart Review
 
 **Date drafted:** 2026-11-21 (expanded 2026-11-22, 2026-11-23)
-**Date committed (predictions final):** TODO (must be before the first real v1.1 run)
+**Date committed (predictions final):** 2026-11-23 22:23 IST, commit 43eaeb7 (before the first real v1.1 run)
 **Project:** Swarm Whistleblowing Sprint (Apart Swarm Alignment Hackathon)
 **Extends:** `PREREG.md` (v1.0, tag `v1.0-sprint`). `PREREG.md` is not edited. Everything in it still
 applies unless this file says otherwise.
