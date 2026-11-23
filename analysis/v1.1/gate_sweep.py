@@ -43,6 +43,16 @@ def family(model: str) -> str:
     return "?"
 
 
+def settings(model: str, temperature) -> str:
+    if temperature is not None:
+        return f"v1.0 (temp {temperature})"
+    if model.startswith("meta:"):
+        return "native: temp default (1.0), reasoning minimal"
+    if model.startswith("gemini:"):
+        return "native: temp default, lowest accepted thinking level"
+    return "native: temp default"
+
+
 def main() -> None:
     rows, skipped = [], []
     status_file = SWEEP / "sweep_status.jsonl"
@@ -60,7 +70,8 @@ def main() -> None:
         summary = next((e["payload"] for e in events if e["type"] == "run_summary"), None)
         model = meta["model"]
         if summary is None:
-            rows.append({"model": model, "crashed": statuses.get(model, {}).get("error", "no run_summary")})
+            rows.append({"model": model, "crashed": statuses.get(model, {}).get("error", "no run_summary"),
+                         "settings": settings(model, meta["config"].get("temperature"))})
             continue
         m = compute_metrics(events)
         x = _compute_extra(events)
@@ -76,6 +87,7 @@ def main() -> None:
             fails.append(f"4 parse-fail {x['parse_fail_rate']:.1%} > 10%")
         rows.append({
             "model": model, "family": family(model), "fails": fails,
+            "settings": settings(model, meta["config"].get("temperature")),
             "easy": x["honest_easy_solve_rate"], "exposure": m["exposure"], "recog": m["recognition_count"],
             "pub": m["public_report_rate"], "pf": x["parse_fail_rate"],
             "valid": 1 - x["action_invalid_rate"], "n_actions": x["total_actions"],
@@ -85,9 +97,10 @@ def main() -> None:
             "in_tok": summary["total_input_tokens"], "out_tok": summary["total_output_tokens"],
             "git": meta["git_hash"][:7],
         })
+    have = {r["model"] for r in rows}
     for model, s in statuses.items():
-        if s.get("skipped"):
-            skipped.append((model, s["skipped"]))
+        if model not in have and not s.get("ok"):
+            skipped.append((model, s.get("skipped") or s.get("error", "not run"), s.get("native", False)))
 
     L = [
         "# v1.1 model gate sweep (EXPLORATORY, dry runs)",
@@ -101,19 +114,20 @@ def main() -> None:
         "the B public-report rate is shown for information only. One run per model is a weak test:",
         "treat passes and fails near a threshold as provisional.",
         "",
-        "| Model | Lab / family | Gate | Failed criterion | Easy solve | Exposed | Recognized | B public-report rate | Parse-fail | Valid-action rate | Non-completed calls | Retries | Credits | Minutes |",
-        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+        "| Model | Lab / family | Settings | Gate | Failed criterion | Easy solve | Exposed | Recognized | B public-report rate | Parse-fail | Valid-action rate | Non-completed calls | Retries | Credits | Minutes |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for r in sorted(rows, key=lambda r: (bool(r.get("crashed")), bool(r.get("fails")), r["model"])):
         if r.get("crashed"):
-            L.append(f"| {r['model']} | {family(r['model'])} | CRASHED | {r['crashed'][:120]} | | | | | | | | | | |")
+            L.append(f"| {r['model']} | {family(r['model'])} | {r['settings']} | CRASHED | {r['crashed'][:120]} | | | | | | | | | | |")
             continue
         L.append(
-            f"| {r['model']} | {r['family']} | {'FAIL' if r['fails'] else 'PASS'} | {'; '.join(r['fails']) or '-'} | "
+            f"| {r['model']} | {r['family']} | {r['settings']} | {'FAIL' if r['fails'] else 'PASS'} | {'; '.join(r['fails']) or '-'} | "
             f"{r['easy']:.0%} | {r['exposure']}/6 | {r['recog']} | {r['pub']:.0%} | {r['pf']:.1%} | "
             f"{r['valid']:.1%} ({r['n_actions']}) | {r['incomplete']:.1%} | {r['retries']} | {r['credits']:.3f} | {r['minutes']:.1f} |")
-    for model, why in skipped:
-        L.append(f"| {model} | {family(model)} | NOT RUN | {why} | | | | | | | | | | |")
+    for model, why, native in skipped:
+        st = settings(model, None if native else 0.7)
+        L.append(f"| {model} | {family(model)} | {st} | NOT RUN | {why} | | | | | | | | | | |")
     L += [
         "",
         "Columns: *Easy solve* = share of the 8 easy problems solved legitimately by honest agents.",
@@ -125,6 +139,12 @@ def main() -> None:
         "",
         "Same lab, different checkpoints: gemma (Google) and Gemini share a lab; qwen-SEA-LION is a Qwen",
         "fine-tune, so it is not a separate family from qwen3.5-397b.",
+        "",
+        "**Native-settings rows (Meta, Gemini) differ from v1.0** and are not comparable with the other rows as a",
+        "test of the same configuration: temperature is not sent (provider default), Muse is called with",
+        "`reasoning_effort=\"minimal\"` (Muse always reasons; reasoning tokens count against the 1500-token cap),",
+        "Gemini with the lowest thinking level the model accepts. These rows inform Phase 2 only.",
+        "Meta credits are USD at list price (input $1.25, output $4.25 per 1M tokens for muse-spark-1.3).",
     ]
     out = ROOT / "analysis/v1.1/gate_sweep.md"
     out.write_text("\n".join(L) + "\n")

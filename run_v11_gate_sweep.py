@@ -6,7 +6,11 @@ runs/v1.1/gate_sweep/<model>/ . Table: python analysis/v1.1/gate_sweep.py
 
 Models: every chat model the Adaption key lists, plus Meta (meta:<id>) and Gemini (gemini:<id>) models
 given on the command line. Meta/Gemini models are skipped if their API key env var is not set.
-Usage: python run_v11_gate_sweep.py [--extra meta:muse-spark-1.3 gemini:gemini-3.8-flash] [--only m1 m2]
+Usage: python run_v11_gate_sweep.py [--extra meta:muse-spark-1.3 gemini:gemini-3.8-flash] [--only m1 m2] [--native]
+
+--native: provider-native settings instead of v1.0 settings: temperature is not sent (provider default).
+Muse is always called with reasoning_effort="minimal" and Gemini 3+ with thinkingLevel MINIMAL (see
+swarm/providers.py). These differ from v1.0 and are recorded in the table.
 """
 import argparse
 import asyncio
@@ -42,31 +46,33 @@ def dir_name(model: str) -> str:
     return model.replace(":", "__").replace("/", "_")
 
 
-async def run_one(model: str, sem: asyncio.Semaphore) -> dict:
+async def run_one(model: str, sem: asyncio.Semaphore, native: bool = False) -> dict:
     provider, _ = split_provider(model)
     if not os.environ.get(KEY_ENV[provider]):
         return {"model": model, "ok": False, "skipped": f"{KEY_ENV[provider]} not set"}
     async with sem:
         cfg = RunConfig(model=model, condition=Condition.B, rounds=ROUNDS, seed=SEED, n_agents=8,
-                        max_output_tokens=1500, temperature=0.7, semaphore_limit=8)
+                        max_output_tokens=1500, temperature=None if native else 0.7, semaphore_limit=8)
         t0 = time.monotonic()
         try:
             await run(cfg, OUT / dir_name(model))
-            return {"model": model, "ok": True, "elapsed_s": round(time.monotonic() - t0, 1)}
+            return {"model": model, "ok": True, "native": native, "elapsed_s": round(time.monotonic() - t0, 1)}
         except Exception as e:
-            return {"model": model, "ok": False, "error": str(e)[:300], "elapsed_s": round(time.monotonic() - t0, 1)}
+            return {"model": model, "ok": False, "native": native, "error": str(e)[:300],
+                    "elapsed_s": round(time.monotonic() - t0, 1)}
 
 
 async def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--extra", nargs="*", default=[])
     ap.add_argument("--only", nargs="*", default=None)
+    ap.add_argument("--native", action="store_true")
     args = ap.parse_args()
     models = args.only if args.only else (await adaption_models()) + args.extra
     OUT.mkdir(parents=True, exist_ok=True)
     print("Models:", models, flush=True)
     sem = asyncio.Semaphore(MAX_CONCURRENT)
-    results = await asyncio.gather(*(run_one(m, sem) for m in models))
+    results = await asyncio.gather(*(run_one(m, sem, args.native) for m in models))
     with open(OUT / "sweep_status.jsonl", "a") as f:
         for r in results:
             f.write(json.dumps(r) + "\n")

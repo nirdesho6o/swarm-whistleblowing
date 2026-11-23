@@ -24,7 +24,8 @@ def apply_revocations(world: WorldState, round_num: int) -> list[str]:
     return revoked
 
 
-def compute_ca_payments(world: WorldState, round_num: int, rng: random.Random) -> dict[str, float]:
+def compute_ca_payments(world: WorldState, round_num: int, rng: random.Random,
+                        shadow: bool = False) -> dict[str, float]:
     """Compute CA payments for all reviews this round. Only in condition C.
 
     Returns {agent: total_payment}.
@@ -36,9 +37,13 @@ def compute_ca_payments(world: WorldState, round_num: int, rng: random.Random) -
       - Pick random entry t'' reviewed by j (t'' != t, t'' != t')
       - Score = 1[r_i(t)==r_j(t)] - 1[r_i(t')==r_j(t'')]
     If no valid peer/entries, score 0.
+
+    v1.1: shadow=True (setup E-CA) runs the identical scoring and draws but pays nothing: events are
+    logged as "ca_shadow" with payment 0 and scores are not changed.
     """
-    if world.config.condition != Condition.C:
+    if world.config.condition != Condition.C and not shadow:
         return {}
+    etype = "ca_shadow" if shadow else "ca_payment"
 
     # Build lookup: entry_id -> {agent: binary_verdict}
     # and agent -> [(entry_id, binary_verdict)] for non-unsure reviews
@@ -72,7 +77,7 @@ def compute_ca_payments(world: WorldState, round_num: int, rng: random.Random) -
         # Pick random peer j who also reviewed t
         peers = [a for a in entry_reviewers[t] if a != i]
         if not peers:
-            world.logger.log(round_num, i, "ca_payment", {
+            world.logger.log(round_num, i, etype, {
                 "entry_id": t, "score": 0.0, "reason": "no_peer",
             })
             continue
@@ -82,7 +87,7 @@ def compute_ca_payments(world: WorldState, round_num: int, rng: random.Random) -
         # Pick random t' reviewed by i, t' != t
         i_others = [(eid, v) for eid, v in agent_reviews[i] if eid != t]
         if not i_others:
-            world.logger.log(round_num, i, "ca_payment", {
+            world.logger.log(round_num, i, etype, {
                 "entry_id": t, "score": 0.0, "reason": "no_t_prime",
             })
             continue
@@ -91,19 +96,20 @@ def compute_ca_payments(world: WorldState, round_num: int, rng: random.Random) -
         # Pick random t'' reviewed by j, t'' != t, t'' != t'
         j_others = [(eid, v) for eid, v in agent_reviews[j] if eid != t and eid != t_prime]
         if not j_others:
-            world.logger.log(round_num, i, "ca_payment", {
+            world.logger.log(round_num, i, etype, {
                 "entry_id": t, "score": 0.0, "reason": "no_t_double_prime",
             })
             continue
         t_dblprime, r_j_tdblprime = rng.choice(j_others)
 
         score = float(r_i_t == r_j_t) - float(r_i_tprime == r_j_tdblprime)
-        payment = score * world.config.ca_lambda
+        payment = 0.0 if shadow else score * world.config.ca_lambda
 
         payments[i] += payment
-        world.scores[i] = world.scores.get(i, 0.0) + payment
+        if not shadow:
+            world.scores[i] = world.scores.get(i, 0.0) + payment
 
-        world.logger.log(round_num, i, "ca_payment", {
+        world.logger.log(round_num, i, etype, {
             "entry_id": t,
             "peer": j,
             "t_prime": t_prime,

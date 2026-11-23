@@ -20,6 +20,7 @@ def _keys(monkeypatch):
     monkeypatch.setenv("META_API_KEY", META_KEY)
     monkeypatch.setenv("GEMINI_API_KEY", GEMINI_KEY)
     providers.GeminiBackend._limiters.clear()
+    providers.GeminiBackend._accepted_level.clear()
 
 
 def _run(coro):
@@ -217,3 +218,39 @@ def test_missing_key_raises(monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY")
     with pytest.raises(RuntimeError, match="GEMINI_API_KEY"):
         GeminiBackend("gemini-3.8-flash")
+
+
+def test_native_settings_omit_temperature():
+    m = MetaBackend("muse-spark-1.3").build_body("s", "u", 1500, None)
+    assert "temperature" not in m and m["reasoning_effort"] == "minimal"
+    g = GeminiBackend("gemini-3.8-flash", rpm=0).build_body("s", "u", 1500, None)["generationConfig"]
+    assert "temperature" not in g and g["maxOutputTokens"] == 1500
+
+
+def test_gemini_steps_up_thinking_level_when_rejected():
+    providers.GeminiBackend._accepted_level.clear()
+    sent = []
+
+    def handler(req):
+        lvl = json.loads(req.content)["generationConfig"]["thinkingConfig"]["thinkingLevel"]
+        sent.append(lvl)
+        if lvl == "MINIMAL":
+            return httpx.Response(400, json={"error": {"message": "Thinking level MINIMAL is not supported for this model."}})
+        return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": "x"}]}, "finishReason": "STOP"}],
+                                         "usageMetadata": {}})
+
+    b = GeminiBackend("gemini-3.8-flash", transport=httpx.MockTransport(handler), rpm=0)
+    _run(b.create("s", "u", 10, None))
+    _run(b.create("s", "u", 10, None))
+    assert sent == ["MINIMAL", "LOW", "LOW"] and b.thinking_level == "LOW"
+    providers.GeminiBackend._accepted_level.clear()
+
+
+def test_daily_quota_429_fails_fast():
+    def handler(req):
+        return httpx.Response(429, json={"error": {"code": 429, "status": "RESOURCE_EXHAUSTED", "details": [
+            {"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": "65639s"}]}})
+
+    b = GeminiBackend("gemini-3.8-flash", transport=httpx.MockTransport(handler), rpm=0)
+    with pytest.raises(providers.ProviderError, match="quota exhausted"):
+        _run(b.create("s", "u", 10, None))

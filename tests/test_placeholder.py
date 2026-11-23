@@ -1000,8 +1000,7 @@ class TestDecoyLineDedup:
     no decoy reuses a template within 5 rounds."""
 
     def test_no_same_line_same_round(self):
-        from swarm.runner import _pick_decoy_line, DECOY_POST_SUBMIT_LINES, _decoy_line_history
-        _decoy_line_history.clear()
+        from swarm.runner import _pick_decoy_line, DECOY_POST_SUBMIT_LINES
         rng = random.Random(42)
         used: set[str] = set()
         history: dict[str, list[tuple[int, str]]] = {}
@@ -1011,8 +1010,7 @@ class TestDecoyLineDedup:
         assert len(used) == 2
 
     def test_no_reuse_within_5_rounds(self):
-        from swarm.runner import _pick_decoy_line, DECOY_POST_SUBMIT_LINES, _decoy_line_history
-        _decoy_line_history.clear()
+        from swarm.runner import _pick_decoy_line, DECOY_POST_SUBMIT_LINES
         history: dict[str, list[tuple[int, str]]] = {}
         agent = "A"
         templates_by_round: dict[int, str] = {}

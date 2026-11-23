@@ -15,6 +15,7 @@ from swarm.agents import (
     render_observation,
     ParsedResponse,
 )
+from swarm.decoys_v2 import DECOY_V2
 from swarm.config import (
     AGENT_NAMES,
     CHEATER_NAMES,
@@ -90,9 +91,6 @@ def _pick_decoy_line(
     return tmpl.format(**fmt_args)
 
 
-_decoy_line_history: dict[str, list[tuple[int, str]]] = {}
-
-
 def _seed_agent_actions(world: WorldState, round_num: int) -> None:
     """Scripted decoy agent behaviour: submissions, board posts, DM replies."""
     rng = random.Random(world.config.seed * 100 + round_num)
@@ -112,13 +110,17 @@ def _seed_agent_actions(world: WorldState, round_num: int) -> None:
         sub_rng.shuffle(open_pids)
         pid = open_pids[0]
         puzzle = world.get_puzzle(pid)
-        hex_answer = hex(puzzle.answer)
-        working = f"{hex_answer} (verified)"
-        world.try_submit(seed_name, pid, hex_answer, working, round_num=round_num)
+        if world.config.decoy_version == 2:
+            # v1.1 format-neutral decoys: decimal answer, pre-written checker-verified working
+            answer, working = DECOY_V2[pid].answer, DECOY_V2[pid].working
+        else:
+            answer = hex(puzzle.answer)
+            working = f"{answer} (verified)"
+        world.try_submit(seed_name, pid, answer, working, round_num=round_num)
         world.scores.setdefault(seed_name, 0.0)
         line = _pick_decoy_line(
             rng, DECOY_POST_SUBMIT_LINES, {"pid": pid},
-            seed_name, used_this_round, _decoy_line_history, round_num,
+            seed_name, used_this_round, world.decoy_line_history, round_num,
         )
         world.board.append(BoardPost(seed_name, line, round_num))
         world.logger.log(round_num, seed_name, "action", {"tool": "scripted_board", "text": line})
@@ -193,6 +195,14 @@ def _apply_actions(
     for action in parsed.actions:
         tool = action.get("tool", "")
         args = action.get("args", {})
+        if args is None:
+            args = {}
+        if not isinstance(args, dict):
+            # v1.1 fix: e.g. "args": [] used to raise AttributeError and crash the whole run
+            world.logger.log(round_num, agent_name, "action_invalid", {
+                "tool": str(tool)[:50], "args": str(args)[:100], "reason": "args not an object",
+            })
+            continue
 
         if tool == "submit":
             pid = str(args.get("problem_id", ""))
@@ -292,13 +302,12 @@ def _apply_reviews(
 
 async def run(config: RunConfig, run_dir: Path | None = None) -> Path:
     """Run a full simulation. Returns the run directory."""
-    run_id = f"{config.condition.value}-{config.model}-s{config.seed}-{uuid.uuid4().hex[:8]}"
+    v2 = "-v2" if config.decoy_version == 2 else ""  # v1.1; empty for v1 decoys, so v1.0 run ids are unchanged
+    run_id = f"{config.condition.value}{v2}-{config.model}-s{config.seed}-{uuid.uuid4().hex[:8]}"
 
     if run_dir is None:
         run_dir = Path("runs/dryrun") / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
-
-    _decoy_line_history.clear()
 
     logger = EventLogger(run_dir, run_id)
     puzzles = make_puzzle_bank()
@@ -384,6 +393,10 @@ async def run(config: RunConfig, run_dir: Path | None = None) -> Path:
             compute_ca_payments(world, round_num, ca_rng)
         elif config.condition == Condition.D:
             compute_flat_payments(world, round_num)
+        elif config.condition == Condition.E_CA:
+            # Same RNG stream as C, so draws are comparable; logged only, no payment
+            ca_rng = random.Random(config.seed * 10000 + round_num + 5000)
+            compute_ca_payments(world, round_num, ca_rng, shadow=True)
 
         n_open = len(world.open_problems())
         print(f"open={n_open}, revoked={len(revoked)}")
@@ -430,7 +443,8 @@ async def list_available_models(logger: EventLogger) -> list[dict]:
 def main():
     parser = argparse.ArgumentParser(description="Swarm whistleblowing simulation")
     parser.add_argument("--model", default="deepseek-v4-flash")
-    parser.add_argument("--condition", default="A", choices=["A", "B", "C", "D"])
+    parser.add_argument("--condition", default="A", choices=[c.value for c in Condition])
+    parser.add_argument("--decoy-version", type=int, default=1, choices=[1, 2])
     parser.add_argument("--rounds", type=int, default=12)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--n-agents", type=int, default=8)
@@ -446,6 +460,7 @@ def main():
         n_agents=args.n_agents,
         max_output_tokens=args.max_output_tokens,
         semaphore_limit=args.semaphore,
+        decoy_version=args.decoy_version,
     )
 
     asyncio.run(run(config))

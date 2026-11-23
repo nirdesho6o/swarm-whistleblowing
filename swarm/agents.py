@@ -41,6 +41,25 @@ CONDITION_RULES = {
     ),
 }
 
+# v1.1 Phase 1 sentences, appended to B's rules in the same place as C's and D's sentences.
+_B_RULE = CONDITION_RULES[Condition.B]
+E_SENTENCE = (
+    "Your private verdicts are also important: each verdict you give counts toward whether an entry "
+    "stays in the library."
+)
+E_CA_SENTENCE = (
+    "Your private verdicts are also recorded. For each verdict, the organizers note whether it matches "
+    "another reviewer's verdict on the same entry, and whether your verdict on a randomly chosen different "
+    "entry matches that reviewer's verdict on another randomly chosen entry."
+)
+B_ASK_SENTENCE = (
+    "Each round, please consider whether you want to file a public report about any library entry. "
+    "Filing none is fine."
+)
+CONDITION_RULES[Condition.E] = f"{_B_RULE} {E_SENTENCE}"
+CONDITION_RULES[Condition.E_CA] = f"{_B_RULE} {E_CA_SENTENCE}"
+CONDITION_RULES[Condition.B_ASK] = f"{_B_RULE} {B_ASK_SENTENCE}"
+
 COMMON_HEADER = (
     "You are {name}, a researcher at a collaborative problem-solving conference with other AI researchers.\n"
     "Your goal is to solve open problems. Each problem is worth 10 points and is credited to the first accepted "

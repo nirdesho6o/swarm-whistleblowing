@@ -60,7 +60,12 @@ class RateLimited(Exception):
 
 
 class ProviderError(Exception):
-    """Non-retryable request error (4xx other than 429)."""
+    """Non-retryable request error (4xx other than 429, or a 429 asking for a very long wait)."""
+
+
+# A 429 that asks us to wait longer than this is a quota (e.g. requests-per-day) limit, not a burst limit:
+# fail fast instead of retrying. Observed 2026-11-23: Gemini free tier gemini-3.8-flash = 20 requests/day.
+MAX_RETRY_AFTER_S = 600.0
 
 
 def _scrub(text: str, secret: str) -> str:
@@ -113,7 +118,10 @@ class _HttpBackend:
 
     def _raise_for_status(self, r: httpx.Response) -> None:
         if r.status_code == 429:
-            raise RateLimited(_scrub(f"429 rate limited: {r.text[:300]}", self._key), self._retry_after(r))
+            ra = self._retry_after(r)
+            if ra is not None and ra > MAX_RETRY_AFTER_S:
+                raise ProviderError(_scrub(f"429 quota exhausted (retry after {ra:.0f}s): {r.text[:600]}", self._key))
+            raise RateLimited(_scrub(f"429 rate limited: {r.text[:300]}", self._key), ra)
         if r.status_code >= 500:
             # Retryable by the caller's generic retry loop
             raise RuntimeError(_scrub(f"{r.status_code} server error: {r.text[:300]}", self._key))
@@ -142,17 +150,20 @@ class MetaBackend(_HttpBackend):
     def _headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self._key}", "Content-Type": "application/json"}
 
-    def build_body(self, instructions: str, user_content: str, max_output_tokens: int, temperature: float) -> dict:
-        return {
+    def build_body(self, instructions: str, user_content: str, max_output_tokens: int,
+                   temperature: float | None) -> dict:
+        body = {
             "model": self.model,
             "messages": [
                 {"role": "developer", "content": instructions},
                 {"role": "user", "content": user_content},
             ],
             "max_completion_tokens": max_output_tokens,
-            "temperature": temperature,
             "reasoning_effort": self.reasoning_effort,
         }
+        if temperature is not None:  # None = Meta's default (1.0), which Meta recommends for Muse Spark
+            body["temperature"] = temperature
+        return body
 
     async def create(self, instructions: str, user_content: str, max_output_tokens: int,
                      temperature: float) -> BackendResult:
@@ -192,14 +203,18 @@ class GeminiBackend(_HttpBackend):
     - Client-side RPM limit from env GEMINI_RPM (default 10; free-tier limits are per project and
       shown only in AI Studio, so set this to the project's actual limit).
     - 429 RESOURCE_EXHAUSTED -> RateLimited, using RetryInfo.retryDelay or Retry-After if present.
-    - Thinking: for Gemini 3+ models we request thinkingLevel MINIMAL (docs: "Little to no thinking";
-      using thinkingLevel on earlier models is an error). Older models get no thinkingConfig.
+    - Thinking: for Gemini 3+ models we request the lowest thinking level the model accepts, starting at
+      MINIMAL (docs: "Little to no thinking"). Some models reject MINIMAL with a 400 ("Thinking level MINIMAL
+      is not supported for this model", seen on gemini-3.8-flash); we then step up MINIMAL -> LOW -> MEDIUM
+      and remember the accepted level (`self.thinking_level`). Older models get no thinkingConfig.
     - Docs say temperature is "silently ignored on Gemini 3.6 Flash and newer models"; we still send 0.7.
     """
 
     env_var = "GEMINI_API_KEY"
     base_url = GEMINI_BASE_URL
     _limiters: dict[str, _RpmLimiter] = {}
+    THINKING_LEVELS = ("MINIMAL", "LOW", "MEDIUM")
+    _accepted_level: dict[str, str] = {}  # model -> level that worked, shared across clients in the process
 
     def __init__(self, model: str, transport: httpx.AsyncBaseTransport | None = None, rpm: int | None = None):
         super().__init__(model, transport)
@@ -210,14 +225,22 @@ class GeminiBackend(_HttpBackend):
     def _headers(self) -> dict[str, str]:
         return {"x-goog-api-key": self._key, "Content-Type": "application/json"}
 
-    def _thinking_config(self) -> dict | None:
+    @property
+    def thinking_level(self) -> str | None:
         m = re.match(r"gemini-(\d+)", self.model)
-        if m and int(m.group(1)) >= 3:
-            return {"thinkingLevel": "MINIMAL"}
-        return None
+        if not (m and int(m.group(1)) >= 3):
+            return None
+        return GeminiBackend._accepted_level.get(self.model, self.THINKING_LEVELS[0])
 
-    def build_body(self, instructions: str, user_content: str, max_output_tokens: int, temperature: float) -> dict:
-        gen: dict[str, Any] = {"temperature": temperature, "maxOutputTokens": max_output_tokens}
+    def _thinking_config(self) -> dict | None:
+        lvl = self.thinking_level
+        return {"thinkingLevel": lvl} if lvl else None
+
+    def build_body(self, instructions: str, user_content: str, max_output_tokens: int,
+                   temperature: float | None) -> dict:
+        gen: dict[str, Any] = {"maxOutputTokens": max_output_tokens}
+        if temperature is not None:  # None = model default
+            gen["temperature"] = temperature
         tc = self._thinking_config()
         if tc:
             gen["thinkingConfig"] = tc
@@ -242,14 +265,23 @@ class GeminiBackend(_HttpBackend):
 
     async def create(self, instructions: str, user_content: str, max_output_tokens: int,
                      temperature: float) -> BackendResult:
-        await self._limiter.acquire()
-        body = self.build_body(instructions, user_content, max_output_tokens, temperature)
-        try:
-            r = await self._http.post(f"/models/{self.model}:generateContent", json=body, headers=self._headers())
-        except httpx.HTTPError as e:
-            raise RuntimeError(_scrub(f"gemini transport error: {e!r}", self._key)) from None
-        self._raise_for_status(r)
-        return self.parse(r.json())
+        while True:
+            await self._limiter.acquire()
+            body = self.build_body(instructions, user_content, max_output_tokens, temperature)
+            try:
+                r = await self._http.post(f"/models/{self.model}:generateContent", json=body, headers=self._headers())
+            except httpx.HTTPError as e:
+                raise RuntimeError(_scrub(f"gemini transport error: {e!r}", self._key)) from None
+            lvl = self.thinking_level
+            if r.status_code == 400 and lvl and "thinking level" in r.text.lower():
+                i = self.THINKING_LEVELS.index(lvl)
+                if i + 1 < len(self.THINKING_LEVELS):
+                    GeminiBackend._accepted_level[self.model] = self.THINKING_LEVELS[i + 1]
+                    continue
+            self._raise_for_status(r)
+            if lvl:
+                GeminiBackend._accepted_level.setdefault(self.model, lvl)
+            return self.parse(r.json())
 
     @staticmethod
     def parse(data: dict[str, Any]) -> BackendResult:

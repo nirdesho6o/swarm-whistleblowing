@@ -11,6 +11,10 @@ class Condition(str, Enum):
     B = "B"
     C = "C"
     D = "D"
+    # v1.1 Phase 1 (PREREG_v1.1.md). A-D above are unchanged.
+    E = "E"            # B + attention sentence, no payment
+    E_CA = "E-CA"      # B + C's comparison sentence without points; CA scores logged only (ca_shadow)
+    B_ASK = "B-ask"    # B + sentence asking each round whether to file a public report
 
 
 AGENT_NAMES = [
@@ -51,5 +55,6 @@ class RunConfig(BaseModel):
     ca_lambda: float = 10.0
     seed: int = 0
     max_output_tokens: int = 1500
-    temperature: float = 0.7
+    temperature: float | None = 0.7  # None = provider default (v1.1 native-settings gate runs only)
     semaphore_limit: int = 8
+    decoy_version: Literal[1, 2] = 1  # v1.1: 2 = format-neutral decoys (swarm/decoys_v2.py)

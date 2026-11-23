@@ -71,6 +71,8 @@ class WorldState:
     scores: dict[str, float] = field(default_factory=dict)
     prior_reads: dict[str, set[str]] = field(default_factory=dict)  # agent -> entry_ids read in past rounds
     last_round_reads: dict[str, set[str]] = field(default_factory=dict)  # agent -> entry_ids read last round (for observation)
+    # v1.1: decoy board-line history per run (was a module-level dict shared by concurrent runs in one process)
+    decoy_line_history: dict[str, list[tuple[int, str]]] = field(default_factory=dict)
 
     _entry_counter: int = 0
 

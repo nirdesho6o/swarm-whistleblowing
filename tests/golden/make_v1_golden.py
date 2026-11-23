@@ -35,7 +35,8 @@ def _world(cond: str, seed: int, tmp: Path) -> WorldState:
 
 def _decoy_trace(cond: str, seed: int, tmp: Path) -> dict:
     """Run only the scripted decoys for 20 rounds; one honest DM to each decoy in round 0."""
-    runner._decoy_line_history.clear()
+    if hasattr(runner, "_decoy_line_history"):  # v1.0 only: module-level history
+        runner._decoy_line_history.clear()
     w = _world(cond, seed, tmp)
     for d in SEED_AGENT_NAMES:
         w.send_dm("prover-alpha", d, "hello", 0)
@@ -52,7 +53,8 @@ def _decoy_trace(cond: str, seed: int, tmp: Path) -> dict:
 
 def _observations(cond: str, tmp: Path) -> dict:
     """Observation text for every agent in a small scripted state (decoy + honest + cheater entries)."""
-    runner._decoy_line_history.clear()
+    if hasattr(runner, "_decoy_line_history"):  # v1.0 only: module-level history
+        runner._decoy_line_history.clear()
     w = _world(cond, 0, tmp)
     for r in range(3):
         runner._seed_agent_actions(w, r)
