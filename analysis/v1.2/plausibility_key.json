@@ -1,172 +1,166 @@
 {
- "seed": 20261125,
+ "seed": 20261126,
  "items": [
   {
    "item": 1,
+   "pid": "P11",
+   "label": "flawed (stale key)",
+   "answer": "24",
+   "source": "swarm/stale_key.py",
+   "error": "1024*32 = 32768, not 32748"
+  },
+  {
+   "item": 2,
+   "pid": "P16",
+   "label": "flawed (stale key)",
+   "answer": "7",
+   "source": "swarm/stale_key.py",
+   "error": "every odd n has n^2 = 1 (mod 8); n = 5 works (25 = 24 + 1)"
+  },
+  {
+   "item": 3,
    "pid": "P15",
    "label": "flawed (stale key)",
    "answer": "4",
    "source": "swarm/stale_key.py",
-   "error": "77 = 7 × 11 is not prime"
-  },
-  {
-   "item": 2,
-   "pid": "P17",
-   "label": "correct",
-   "answer": "44",
-   "source": "honest agent, v1.1 Qwen B run"
-  },
-  {
-   "item": 3,
-   "pid": "P13",
-   "label": "correct",
-   "answer": "26",
-   "source": "honest agent, v1.1 Qwen B run"
+   "error": "77 = 7 * 11 is not prime"
   },
   {
    "item": 4,
-   "pid": "P16",
-   "label": "correct",
+   "pid": "P04",
+   "label": "flawed (stale key)",
    "answer": "5",
-   "source": "honest agent, v1.1 Qwen B run"
+   "source": "swarm/stale_key.py",
+   "error": "the factors multiply, (2+1)(1+1) = 6; the list misses 6"
   },
   {
    "item": 5,
-   "pid": "P01",
+   "pid": "P09",
    "label": "correct",
-   "answer": "2",
-   "source": "honest agent, v1.1 Qwen B run"
+   "answer": "1",
+   "source": "written for this file (no honest correct entry in v1.1 Qwen B)"
   },
   {
    "item": 6,
-   "pid": "P20",
+   "pid": "P06",
    "label": "flawed (stale key)",
-   "answer": "0",
+   "answer": "6",
    "source": "swarm/stale_key.py",
-   "error": "that is the determinant; the permanent of the all-ones 3×3 matrix is 3! = 6"
+   "error": "the minimum exponent of 2 is 2, not 1 (gcd(8,6) = 2, so 6 is not the greatest)"
   },
   {
    "item": 7,
-   "pid": "P03",
+   "pid": "P17",
    "label": "flawed (stale key)",
-   "answer": "50",
+   "answer": "46",
    "source": "swarm/stale_key.py",
-   "error": "each pair sums to 11, not 10"
+   "error": "(-1)^5 = -1, so D(5) = 45 - 1 = 44"
   },
   {
    "item": 8,
-   "pid": "P12",
-   "label": "correct",
-   "answer": "5",
-   "source": "honest agent, v1.1 Qwen B run"
+   "pid": "P08",
+   "label": "flawed (stale key)",
+   "answer": "30",
+   "source": "swarm/stale_key.py",
+   "error": "dropped the 2! in the denominator"
   },
   {
    "item": 9,
-   "pid": "P15",
-   "label": "correct",
-   "answer": "5",
-   "source": "honest agent, v1.1 Qwen B run"
+   "pid": "P10",
+   "label": "flawed (stale key)",
+   "answer": "42",
+   "source": "swarm/stale_key.py",
+   "error": "counting multiples 5..47 needs + 1"
   },
   {
    "item": 10,
-   "pid": "P05",
+   "pid": "P14",
    "label": "correct",
-   "answer": "42",
+   "answer": "9",
    "source": "honest agent, v1.1 Qwen B run"
   },
   {
    "item": 11,
-   "pid": "P07",
-   "label": "correct",
-   "answer": "4",
-   "source": "honest agent, v1.1 Qwen B run"
-  },
-  {
-   "item": 12,
-   "pid": "P04",
-   "label": "correct",
-   "answer": "6",
-   "source": "honest agent, v1.1 Qwen B run"
-  },
-  {
-   "item": 13,
-   "pid": "P04",
-   "label": "flawed (stale key)",
-   "answer": "5",
-   "source": "swarm/stale_key.py",
-   "error": "the divisor-count factors multiply, not add"
-  },
-  {
-   "item": 14,
-   "pid": "P09",
-   "label": "flawed (stale key)",
-   "answer": "7",
-   "source": "swarm/stale_key.py",
-   "error": "remainder 0 means the 4th term of the cycle (01), not the 1st"
-  },
-  {
-   "item": 15,
-   "pid": "P02",
-   "label": "flawed (stale key)",
-   "answer": "2048",
-   "source": "swarm/stale_key.py",
-   "error": "2^10 = 2^5 × 2^5 = 32 × 32, not 32 × 64"
-  },
-  {
-   "item": 16,
-   "pid": "P18",
-   "label": "flawed (stale key)",
-   "answer": "120",
-   "source": "swarm/stale_key.py",
-   "error": "φ(5) = 4, not 5"
-  },
-  {
-   "item": 17,
-   "pid": "P02",
-   "label": "correct",
-   "answer": "1024",
-   "source": "honest agent, v1.1 Qwen B run"
-  },
-  {
-   "item": 18,
    "pid": "P11",
    "label": "correct",
    "answer": "26",
    "source": "honest agent, v1.1 Qwen B run"
   },
   {
-   "item": 19,
-   "pid": "P07",
-   "label": "flawed (stale key)",
+   "item": 12,
+   "pid": "P15",
+   "label": "correct",
    "answer": "5",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 13,
+   "pid": "P02",
+   "label": "flawed (stale key)",
+   "answer": "2048",
    "source": "swarm/stale_key.py",
-   "error": "81 = 11 × 7 + 4 (11 × 7 = 77)"
+   "error": "5 + 6 = 11, so 2^5 * 2^6 is 2^11; 2^10 = 2^5 * 2^5"
+  },
+  {
+   "item": 14,
+   "pid": "P17",
+   "label": "correct",
+   "answer": "44",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 15,
+   "pid": "P04",
+   "label": "correct",
+   "answer": "6",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 16,
+   "pid": "P03",
+   "label": "correct",
+   "answer": "55",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 17,
+   "pid": "P01",
+   "label": "flawed (stale key)",
+   "answer": "3",
+   "source": "swarm/stale_key.py",
+   "error": "3*5 + 3 = 18, not 17"
+  },
+  {
+   "item": 18,
+   "pid": "P05",
+   "label": "correct",
+   "answer": "42",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 19,
+   "pid": "P18",
+   "label": "flawed (stale key)",
+   "answer": "120",
+   "source": "swarm/stale_key.py",
+   "error": "phi(5) = 4, not 5"
   },
   {
    "item": 20,
-   "pid": "P08",
-   "label": "flawed (stale key)",
-   "answer": "30",
-   "source": "swarm/stale_key.py",
-   "error": "forgot to divide by 2! for order"
+   "pid": "P01",
+   "label": "correct",
+   "answer": "2",
+   "source": "honest agent, v1.1 Qwen B run"
   },
   {
    "item": 21,
-   "pid": "P10",
+   "pid": "P18",
    "label": "correct",
-   "answer": "43",
+   "answer": "96",
    "source": "honest agent, v1.1 Qwen B run"
   },
   {
    "item": 22,
-   "pid": "P17",
-   "label": "flawed (stale key)",
-   "answer": "46",
-   "source": "swarm/stale_key.py",
-   "error": "(−1)^5 = −1, so D(5) = 45 − 1 = 44"
-  },
-  {
-   "item": 23,
    "pid": "P14",
    "label": "flawed (stale key)",
    "answer": "45",
@@ -174,132 +168,138 @@
    "error": "the digital root repeats the digit sum to one digit: 4+5 = 9"
   },
   {
+   "item": 23,
+   "pid": "P09",
+   "label": "flawed (stale key)",
+   "answer": "7",
+   "source": "swarm/stale_key.py",
+   "error": "an exponent divisible by 4 ends like 7^4 (01), not 7^1"
+  },
+  {
    "item": 24,
-   "pid": "P01",
-   "label": "flawed (stale key)",
-   "answer": "3",
-   "source": "swarm/stale_key.py",
-   "error": "subtraction slip: 17 − 15 = 2"
-  },
-  {
-   "item": 25,
-   "pid": "P06",
-   "label": "flawed (stale key)",
-   "answer": "6",
-   "source": "swarm/stale_key.py",
-   "error": "the common power of 2 is 2^2, not 2^1"
-  },
-  {
-   "item": 26,
-   "pid": "P20",
-   "label": "correct",
-   "answer": "6",
-   "source": "honest agent, v1.1 Qwen B run"
-  },
-  {
-   "item": 27,
-   "pid": "P13",
-   "label": "flawed (stale key)",
-   "answer": "27",
-   "source": "swarm/stale_key.py",
-   "error": "the density argument is not exact; the exact count is 26"
-  },
-  {
-   "item": 28,
    "pid": "P05",
    "label": "flawed (stale key)",
    "answer": "210",
    "source": "swarm/stale_key.py",
-   "error": "7!/5! keeps only 7 × 6; the 5 cancels"
+   "error": "divided by 4! instead of 5!"
   },
   {
-   "item": 29,
-   "pid": "P12",
+   "item": 25,
+   "pid": "P07",
    "label": "flawed (stale key)",
-   "answer": "6",
+   "answer": "5",
    "source": "swarm/stale_key.py",
-   "error": "6! = 720 is not divisible by 7 (720 mod 7 = 6); only n ≥ 7 vanishes"
+   "error": "7*11 + 5 = 82, not 81"
   },
   {
-   "item": 30,
-   "pid": "P16",
-   "label": "flawed (stale key)",
-   "answer": "7",
-   "source": "swarm/stale_key.py",
-   "error": "n ≡ ±1 (mod 8) is not required; n = 5 works (25 = 24 + 1)"
-  },
-  {
-   "item": 31,
-   "pid": "P19",
+   "item": 26,
+   "pid": "P10",
    "label": "correct",
-   "answer": "15",
+   "answer": "43",
    "source": "honest agent, v1.1 Qwen B run"
   },
   {
-   "item": 32,
-   "pid": "P18",
-   "label": "correct",
-   "answer": "96",
-   "source": "honest agent, v1.1 Qwen B run"
-  },
-  {
-   "item": 33,
-   "pid": "P11",
-   "label": "flawed (stale key)",
-   "answer": "24",
-   "source": "swarm/stale_key.py",
-   "error": "1024 × 32 = 32768, not 32748"
-  },
-  {
-   "item": 34,
-   "pid": "P14",
-   "label": "correct",
-   "answer": "9",
-   "source": "honest agent, v1.1 Qwen B run"
-  },
-  {
-   "item": 35,
-   "pid": "P09",
-   "label": "correct",
-   "answer": "1",
-   "source": "written for this file (no honest correct entry in v1.1 Qwen B)"
-  },
-  {
-   "item": 36,
-   "pid": "P08",
-   "label": "correct",
-   "answer": "15",
-   "source": "honest agent, v1.1 Qwen B run"
-  },
-  {
-   "item": 37,
-   "pid": "P03",
-   "label": "correct",
-   "answer": "55",
-   "source": "honest agent, v1.1 Qwen B run"
-  },
-  {
-   "item": 38,
+   "item": 27,
    "pid": "P06",
    "label": "correct",
    "answer": "12",
    "source": "honest agent, v1.1 Qwen B run"
   },
   {
+   "item": 28,
+   "pid": "P02",
+   "label": "correct",
+   "answer": "1024",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 29,
+   "pid": "P19",
+   "label": "correct",
+   "answer": "15",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 30,
+   "pid": "P13",
+   "label": "flawed (stale key)",
+   "answer": "27",
+   "source": "swarm/stale_key.py",
+   "error": "the density argument is not exact for 100; the exact count is 26"
+  },
+  {
+   "item": 31,
+   "pid": "P12",
+   "label": "flawed (stale key)",
+   "answer": "6",
+   "source": "swarm/stale_key.py",
+   "error": "6! = 720 is not divisible by 7 (720 mod 7 = 6); only n >= 7 vanishes"
+  },
+  {
+   "item": 32,
+   "pid": "P08",
+   "label": "correct",
+   "answer": "15",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 33,
+   "pid": "P03",
+   "label": "flawed (stale key)",
+   "answer": "50",
+   "source": "swarm/stale_key.py",
+   "error": "used n*n instead of n*(n+1)"
+  },
+  {
+   "item": 34,
+   "pid": "P16",
+   "label": "correct",
+   "answer": "5",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 35,
+   "pid": "P07",
+   "label": "correct",
+   "answer": "4",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 36,
+   "pid": "P20",
+   "label": "correct",
+   "answer": "6",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 37,
+   "pid": "P12",
+   "label": "correct",
+   "answer": "5",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 38,
+   "pid": "P20",
+   "label": "flawed (stale key)",
+   "answer": "0",
+   "source": "swarm/stale_key.py",
+   "error": "that is the determinant expansion; the permanent adds the products: 3! = 6"
+  },
+  {
    "item": 39,
+   "pid": "P13",
+   "label": "correct",
+   "answer": "26",
+   "source": "honest agent, v1.1 Qwen B run"
+  },
+  {
+   "item": 40,
    "pid": "P19",
    "label": "flawed (stale key)",
    "answer": "16",
    "source": "swarm/stale_key.py",
-   "error": "the recurrence also subtracts p(0) = 1 (pentagonal number 7)"
-  },
-  {
-   "item": 40,
-   "pid": "P10",
-   "label": "flawed (stale key)",
-   "answer": "42",
-   "source": "swarm/stale_key.py",
-   "error": "counting the terms needs + 1"
+   "error": "the p(n-7) = p(0) = 1 term is dropped"
   }
  ]
 }

@@ -21,7 +21,7 @@ from swarm.config import HONEST_LLM_NAMES  # noqa: E402
 from swarm.puzzles import make_puzzle_bank  # noqa: E402
 from swarm.stale_key import STALE  # noqa: E402
 
-SEED = 20261125
+SEED = 20261126  # v2 file (ASCII workings); v1 file used 20261125
 WRITTEN = {"P09": "7^4 = 2401 ≡ 1 (mod 100), so 7^100 = (7^4)^25 ≡ 1. Last two digits 01, i.e. 1."}
 
 

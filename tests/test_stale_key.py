@@ -117,3 +117,8 @@ def test_stealth_logging(tmp_path):
         ("prover-chi", "P06", True), ("prover-chi", "P07", False)]
     hbw = [x for x in ev if x["type"] == "submit" and x["agent"] == "prover-alpha" and x["payload"]["via_exploit"]]
     assert len(hbw) == 1   # honest entry accepted through the bug: the "honest but wrong" category
+
+
+@pytest.mark.parametrize("pid", sorted(PUZZLES))
+def test_working_is_plain_ascii(pid):
+    assert STALE[pid].working.isascii(), "stale workings use plain ASCII (* and -), like most honest entries"
