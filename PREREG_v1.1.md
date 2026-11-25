@@ -464,3 +464,17 @@ re-runs interrupted ones with the same seed (noted in the progress log); retries
 No new Phase 1 real runs after **2026-11-26** (the launcher stops starting runs at 23:59 IST; runs
 already started finish). Anything run or analysed after that is listed as **ongoing work**, not as v1.1
 results.
+
+## Clarifications (before viewing results), 2026-11-25
+
+Written after all Phase 1 runs finished and after the analysis script was frozen (commit 0f050bb), before any
+Phase 1 result was computed or viewed. They state how the rules above are applied; no prediction changes.
+
+(a) **Minimum size.** A difference prediction HOLDS only if three conditions are all met: the seed count
+    (≥ 14 of 20, or ≥ 7 of 10), the 95% bootstrap interval excluding zero on the predicted side, and the
+    pooled difference being at least the prediction's stated minimum size. The minimum size applies to the
+    pooled difference (the point estimate), as in v1.0.
+(b) **About-equal readings** (95% interval within the equivalence margin: ±10 points for P6, ±5 points for P7
+    and P8, ±10 points otherwise) are reported for all comparisons but never change a verdict.
+(c) **Ties and missing runs.** A seed whose difference is exactly zero counts as not in the predicted
+    direction. A comparison with any missing or unfinished run is reported as ONGOING and not judged.
