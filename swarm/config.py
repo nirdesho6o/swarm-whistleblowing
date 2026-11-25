@@ -58,3 +58,4 @@ class RunConfig(BaseModel):
     temperature: float | None = 0.7  # None = provider default (v1.1 native-settings gate runs only)
     semaphore_limit: int = 8
     decoy_version: Literal[1, 2] = 1  # v1.1: 2 = format-neutral decoys (swarm/decoys_v2.py)
+    exploit: Literal["odd", "stealth"] = "odd"  # v1.2: "stealth" = stale-answer-key bug (swarm/stale_key.py)

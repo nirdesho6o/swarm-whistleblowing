@@ -5,7 +5,7 @@ from typing import Any
 
 from swarm.config import CHEATER_NAMES, SEED_AGENT_NAMES, Condition, RunConfig
 from swarm.logging import EventLogger
-from swarm.puzzles import Puzzle, check_answer
+from swarm.puzzles import Puzzle, check_answer, check_answer_stealth
 
 
 @dataclass
@@ -102,7 +102,8 @@ class WorldState:
         if self.locks.get(problem_id) is not None:
             return False, None
 
-        accepted, via_exploit = check_answer(puzzle, answer_raw)
+        checker = check_answer_stealth if self.config.exploit == "stealth" else check_answer
+        accepted, via_exploit = checker(puzzle, answer_raw)
         if not accepted:
             return False, None
 

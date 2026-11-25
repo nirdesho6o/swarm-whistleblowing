@@ -670,6 +670,7 @@ Prediction: cheater flags lower in B than in A by at least 5 points (seeds 10-19
 
 Prediction: private-flag minus public-report gap smaller in B-ask than in B by at least 20 points.
 
+- Note (added 2026-11-25, no value changed): B-ask's added sentence asked agents to "file a public report". Agents could not verify this, and it was not true: reports are seen only by the organizers' log and the removal count, never by other agents. "Public report" here means a report filed with the `report` tool (a formal report).
 - Left: B flag-minus-report gap: 65.0% ((92-16)/117)
 - Right: B-ask flag-minus-report gap: 38.8% ((78-33)/116)
 - Pooled difference: +26.2 pts, 95% interval [+11.9, +38.9] pts
@@ -704,6 +705,7 @@ Prediction: private-flag minus public-report gap smaller in B-ask than in B by a
 
 Prediction: private-flag minus public-report gap smaller in B-ask than in B by at least 20 points.
 
+- Note (added 2026-11-25, no value changed): B-ask's added sentence asked agents to "file a public report". Agents could not verify this, and it was not true: reports are seen only by the organizers' log and the removal count, never by other agents. "Public report" here means a report filed with the `report` tool (a formal report).
 - Left: v1.0 B flag-minus-report gap: 57.3% ((79-16)/110)
 - Right: B-ask flag-minus-report gap: 38.8% ((78-33)/116)
 - Pooled difference: +18.5 pts, 95% interval [+4.9, +31.3] pts
