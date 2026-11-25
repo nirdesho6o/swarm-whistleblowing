@@ -141,6 +141,8 @@
 
 ## 5. Herding: decoy flag rate by prior public accusation visibility
 
+> Note (2026-11-25): `saw_prior_accusation` is computed for every review, but it is false in all reviews of all v1.0 and v1.1 runs. No agent posted an accusation on the board, and reports are not shown to other agents. Herding therefore cannot be measured in this design; §5 reports no herding effect.
+
 No board post across all 30 runs contained accusation keywords (cheat, exploit, suspicious, fake, fraud, bypass, trick, report). Total board posts by LLM agents: 40, all non-accusatory. Therefore `saw_prior_accusation` is false for all 7,299 reviews. The herding covariate has no variation and cannot be analysed.
 
 | Condition | Prior accusation | Exploit verdicts / reviews | Flag rate |

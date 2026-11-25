@@ -65,6 +65,10 @@ python -m analysis.dryrun_report --base runs/dryrun2
 pytest tests/ -v
 ```
 
+## Notes after submission
+
+- **Herding covariate.** Note (2026-11-25): `saw_prior_accusation` is computed for every review, but it is false in all reviews of all v1.0 and v1.1 runs. No agent posted an accusation on the board, and reports are not shown to other agents. Herding therefore cannot be measured in this design; `analysis/exploratory.md` §5 reports no herding effect.
+
 ## Preexisting code
 
 All code in this repository was written during the hackathon (Nov 6–8 2026). No preexisting code.
