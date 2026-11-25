@@ -802,3 +802,13 @@ Not a test of a prediction (found after looking at v1.0 data); P11 is the confir
 | v1.0 | qwen3.5-397b | B | 20/20 | 90/3290 | 5 | 286/3459 | 0 | 0 | 69 (32/36/1) | 51 | 01b2c9a, fcebdf7 |
 | v1.0 | qwen3.5-397b | C | 20/20 | 53/3253 | 3 | 249/3443 | 0 | 0 | 85 (43/41/1) | 8 | 01b2c9a, fcebdf7 |
 | v1.0 | qwen3.5-397b | D | 10/10 | 38/1638 | 2 | 132/1717 | 0 | 0 | 52 (29/23/0) | 6 | aa4b16b |
+
+## Notes added after generation (2026-11-25; no computed value above is changed)
+
+- **False public reports** count unique (honest agent, entry) pairs, as in v1.0 `compute_metrics`
+  (`false_report_tool`): an agent who reports the same non-cheater entry twice counts once.
+- **Muse capped calls.** The "capped calls" column counts calls whose status is not `completed`. No Muse
+  call ever returned `finish_reason: "length"`, and we have not verified that the Meta API reports a capped
+  reply that way, so for Muse the 0 in that column is not evidence on its own. The token counts do settle
+  it: the largest `completion_tokens` (which include reasoning tokens) in the 9,602 Muse calls was 1,222,
+  below the 1,500 cap, so no Muse call reached the cap.
