@@ -1,0 +1,9 @@
+{
+ "_comment": "Filled in by the user and committed with PREREG_v1.2.md. For each prediction: 'higher' = the cell predicted to have the higher flag rate (one of the two cells named in PREREG_v1.2.md), 'min_size_points' = the minimum pooled difference in percentage points. null = not specified yet.",
+ "P13a": {"higher": null, "min_size_points": null},
+ "P13b": {"higher": null, "min_size_points": null},
+ "P14a": {"higher": null, "min_size_points": null},
+ "P14b": {"higher": null, "min_size_points": null},
+ "P15": {"higher": null, "min_size_points": null},
+ "P16": {"higher": null, "min_size_points": null}
+}
