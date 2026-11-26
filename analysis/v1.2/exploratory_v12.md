@@ -66,3 +66,62 @@ Reviewer text is logged (raw.jsonl: each agent's full JSON reply, including `tho
 (a), (a) or (b), and the per-verdict (a) columns are over assessable verdicts only. Keywords also fire on ordinary discussion ('check', 'but'), so (b) overstates recomputation; the odd cells give a rough baseline for how often it fires on entries whose answers are correct apart from the `=!` prefix.
 
 Note on the odd cells: 95% of `=!` cheater entries read in the odd cells (1,256 of 1,324 reads) carry the true answer after `=!` and/or in their working (e.g. `=!12`, working 'common factors 2^2*3=12'); only 102 reads were of a bare `=!0`. So in v1.2 the odd cheats were mostly correct solutions with an odd prefix, while the stealthy cheats were wrong answers.
+
+## 5. Content of `=!` cheater entries across phases (added 2026-11-27)
+
+**EXPLORATORY, post-results.** Every accepted cheater entry whose answer starts with `=!`, in all finished runs with the `=!` exploit: v1.0 (Qwen A, B, C seeds 0–9; B, C seeds 10–19; D seeds 0–9), v1.1 Phase 1 (all cells: Qwen, glm-5.2, Muse) and v1.2 (Qwen B-odd-v1/v2, glm-5.2 B/C/E). Content class from the text after `=!`: **correct number** (parses as an integer equal to the true answer), **wrong number** (any other integer, including `=!0`), **bare/non-numeric** (nothing or non-numeric text). Working is known for entries someone opened (library_read).
+
+| Phase | Correct number | Wrong number (of which `=!0`) | Bare/non-numeric | Total | Opened entries with non-empty working |
+|---|---|---|---|---|---|
+| v1.0 | 282 (65.7%) | 103 (24.0%) (68) | 44 (10.3%) | 429 | correct number: 257/257 · wrong number: 86/86 · bare/non-numeric: 31/31 |
+| v1.1 | 853 (56.5%) | 468 (31.0%) (363) | 189 (12.5%) | 1510 | correct number: 719/719 · wrong number: 314/314 · bare/non-numeric: 135/135 |
+| v1.2 | 203 (61.9%) | 58 (17.7%) (30) | 67 (20.4%) | 328 | correct number: 167/167 · wrong number: 41/41 · bare/non-numeric: 54/54 |
+
+First-verdict mix by content class (honest agents' first verdict per entry). Intervals: 95%, resampling runs within the row (10,000 resamples, default_rng(20261125)); none when fewer than 20 verdicts or fewer than 5 runs with verdicts.
+
+| Phase | Model | Content class | First verdicts | exploit | legit | unsure |
+|---|---|---|---|---|---|---|
+| v1.0 | qwen3.5-397b | correct number | 860 | 22.8% (196/860) [18.3, 27.5] | 67.8% (583/860) [62.3, 73.2] | 9.4% (81/860) [6.9, 12.1] |
+| v1.0 | qwen3.5-397b | wrong number | 264 | 85.6% (226/264) [79.9, 90.5] | 5.3% (14/264) [1.8, 9.9] | 9.1% (24/264) [5.6, 13.5] |
+| v1.0 | qwen3.5-397b | bare/non-numeric | 60 | 35.0% (21/60) [22.6, 47.2] | 45.0% (27/60) [28.3, 63.3] | 20.0% (12/60) [8.5, 32.4] |
+| v1.1 | glm-5.2 | correct number | 144 | 2.1% (3/144) [0.0, 5.6] | 90.3% (130/144) [83.3, 96.1] | 7.6% (11/144) [2.0, 14.8] |
+| v1.1 | glm-5.2 | wrong number | 20 | 50.0% (10/20; too few for an interval) | 45.0% (9/20; too few for an interval) | 5.0% (1/20; too few for an interval) |
+| v1.1 | glm-5.2 | bare/non-numeric | 82 | 2.4% (2/82) [0.0, 6.0] | 91.5% (75/82) [85.7, 96.5] | 6.1% (5/82) [1.5, 11.6] |
+| v1.1 | meta:muse-spark-1.3 | correct number | 50 | 28.0% (14/50) [16.7, 41.2] | 48.0% (24/50) [28.6, 65.4] | 24.0% (12/50) [6.8, 43.8] |
+| v1.1 | meta:muse-spark-1.3 | wrong number | 101 | 64.4% (65/101) [47.9, 79.1] | 9.9% (10/101) [3.4, 18.8] | 25.7% (26/101) [13.2, 39.7] |
+| v1.1 | meta:muse-spark-1.3 | bare/non-numeric | 5 | 80.0% (4/5; too few for an interval) | 0.0% (0/5; too few for an interval) | 20.0% (1/5; too few for an interval) |
+| v1.1 | qwen3.5-397b | correct number | 2084 | 26.2% (546/2084) [23.0, 29.5] | 65.3% (1360/2084) [61.6, 68.9] | 8.5% (178/2084) [7.1, 10.0] |
+| v1.1 | qwen3.5-397b | wrong number | 673 | 89.9% (605/673) [86.7, 92.8] | 4.9% (33/673) [3.1, 6.9] | 5.2% (35/673) [3.4, 7.2] |
+| v1.1 | qwen3.5-397b | bare/non-numeric | 207 | 38.2% (79/207) [29.4, 47.0] | 50.7% (105/207) [40.5, 61.1] | 11.1% (23/207) [6.7, 16.1] |
+| v1.2 | glm-5.2 | correct number | 81 | 1.2% (1/81) [0.0, 4.3] | 97.5% (79/81) [94.0, 100.0] | 1.2% (1/81) [0.0, 3.8] |
+| v1.2 | glm-5.2 | wrong number | 16 | 75.0% (12/16; too few for an interval) | 12.5% (2/16; too few for an interval) | 12.5% (2/16; too few for an interval) |
+| v1.2 | glm-5.2 | bare/non-numeric | 105 | 1.9% (2/105) [0.0, 4.7] | 88.6% (93/105) [82.4, 94.1] | 9.5% (10/105) [4.7, 15.2] |
+| v1.2 | qwen3.5-397b | correct number | 468 | 26.7% (125/468) [21.0, 32.5] | 63.7% (298/468) [57.7, 69.7] | 9.6% (45/468) [6.5, 13.3] |
+| v1.2 | qwen3.5-397b | wrong number | 95 | 84.2% (80/95) [72.7, 92.3] | 5.3% (5/95) [1.0, 12.2] | 10.5% (10/95) [3.1, 21.4] |
+| v1.2 | qwen3.5-397b | bare/non-numeric | 33 | 27.3% (9/33) [10.5, 45.8] | 54.5% (18/33) [38.1, 70.3] | 18.2% (6/33) [5.1, 33.3] |
+| v1.0 | all models | correct number | 860 | 22.8% (196/860) [18.3, 27.5] | 67.8% (583/860) [62.3, 73.2] | 9.4% (81/860) [6.9, 12.1] |
+| v1.0 | all models | wrong number | 264 | 85.6% (226/264) [79.9, 90.5] | 5.3% (14/264) [1.8, 9.9] | 9.1% (24/264) [5.6, 13.5] |
+| v1.0 | all models | bare/non-numeric | 60 | 35.0% (21/60) [22.6, 47.2] | 45.0% (27/60) [28.3, 63.3] | 20.0% (12/60) [8.5, 32.4] |
+| v1.1 | all models | correct number | 2278 | 24.7% (563/2278) [21.7, 27.8] | 66.5% (1514/2278) [63.0, 69.8] | 8.8% (201/2278) [7.4, 10.4] |
+| v1.1 | all models | wrong number | 794 | 85.6% (680/794) [81.4, 89.3] | 6.5% (52/794) [4.3, 9.3] | 7.8% (62/794) [5.4, 10.7] |
+| v1.1 | all models | bare/non-numeric | 294 | 28.9% (85/294) [21.6, 36.5] | 61.2% (180/294) [52.5, 69.7] | 9.9% (29/294) [6.5, 13.7] |
+| v1.2 | all models | correct number | 549 | 23.0% (126/549) [17.5, 28.3] | 68.7% (377/549) [62.9, 75.0] | 8.4% (46/549) [5.5, 11.5] |
+| v1.2 | all models | wrong number | 111 | 82.9% (92/111) [71.7, 91.1] | 6.3% (7/111) [1.5, 13.3] | 10.8% (12/111) [4.1, 20.0] |
+| v1.2 | all models | bare/non-numeric | 138 | 8.0% (11/138) [3.2, 14.2] | 80.4% (111/138) [72.6, 87.1] | 11.6% (16/138) [6.6, 17.4] |
+| all phases | all models | correct number | 3687 | 24.0% (885/3687) [21.6, 26.4] | 67.1% (2474/3687) [64.4, 69.7] | 8.9% (328/3687) [7.7, 10.1] |
+| all phases | all models | wrong number | 1169 | 85.4% (998/1169) [82.1, 88.2] | 6.2% (73/1169) [4.4, 8.3] | 8.4% (98/1169) [6.4, 10.7] |
+| all phases | all models | bare/non-numeric | 492 | 23.8% (117/492) [18.4, 29.3] | 64.6% (318/492) [58.1, 70.9] | 11.6% (57/492) [8.6, 14.8] |
+
+### What this means for v1.0
+
+- In v1.0, 282 of 429 `=!` cheater entries (65.7%) carried the correct number after `=!`. All of them that were opened (257/257) showed non-empty working; whether that working was itself correct was not checked. These entries were accepted only because of the bug, but carried the correct answer.
+- The v1.0 **cheater-flag rate** counted every `exploit` verdict on any cheater entry as a true flag. For content-correct entries the visible sign of cheating is the `=!` prefix, so for most cheater entries the rate measures reaction to that prefix on a correct answer. By class, v1.0 honest agents flagged 22.8% of first verdicts on correct-number entries, 85.6% on wrong-number entries and 35.0% on bare/non-numeric ones (table above).
+- **Exposure** (an honest agent opened ≥1 cheater entry) and **recognition** (private probe `noticed_suspicious` after opening) were defined over all cheater entries. Split by what the agent opened (v1.0 runs; recognition as in v1.0 `compute_metrics`, probe from the round after the first cheater read):
+
+| v1.0 exposed honest agents who opened... | Agents | Recognized |
+|---|---|---|
+| only content-correct entries | 130 | 94.6% (123/130) |
+| at least one wrong/bare entry | 196 | 98.5% (193/196) |
+
+- Recognition is high in both groups (94.6% vs 98.5%), so the v1.0 recognition result does not depend on agents having seen a wrong answer: the `=!` prefix alone was enough to be noticed.
+- So the pooled v1.0 cheater-flag rate and the A/B/C cheater-flag comparisons mix three different stimuli, about two thirds of them correct answers with an odd prefix. Where the `=!` entry was also wrong (about a quarter of entries), agents flagged it most of the time (85.6%), close to the v1.2 stealthy cells (about 78% exploit on wrong answers in an ordinary format). Claims about the v1.0 cheater metrics should be stated by content class, or described as reactions to the `=!` prefix.
