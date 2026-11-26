@@ -119,6 +119,16 @@ def test_stealth_logging(tmp_path):
     assert len(hbw) == 1   # honest entry accepted through the bug: the "honest but wrong" category
 
 
-@pytest.mark.parametrize("pid", sorted(PUZZLES))
-def test_working_is_plain_ascii(pid):
-    assert STALE[pid].working.isascii(), "stale workings use plain ASCII (* and -), like most honest entries"
+def test_symbol_mix_matches_honest_entries():
+    """v1.2 style pass (analysis/v1.2/style_stale_workings.py, seed 20261126): notation only."""
+    import importlib.util
+    from pathlib import Path
+    s = importlib.util.spec_from_file_location(
+        "style", Path(__file__).resolve().parents[1] / "analysis/v1.2/style_stale_workings.py")
+    m = importlib.util.module_from_spec(s); s.loader.exec_module(m)
+    new, groups = m.styled()
+    assert {pid: e.working for pid, e in STALE.items()} == new, "stale_key.py matches the seeded style pass"
+    ws = [e.working for e in STALE.values()]
+    assert sum("×" in w for w in ws) == 10 and sum("*" in w for w in ws) == 5
+    assert sum("×" not in w and "*" not in w for w in ws) == 5
+    assert sum(not w.isascii() for w in ws) == 13
