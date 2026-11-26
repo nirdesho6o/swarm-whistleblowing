@@ -13,6 +13,10 @@ What is new in v1.2:
   below 20%, otherwise +/-10 points. About-equal readings never change a verdict.
 - Prediction directions and minimum sizes are read from analysis/v1.2/predictions.json, which is filled in and
   committed together with PREREG_v1.2.md. A prediction whose entry is still null is reported as NOT SPECIFIED.
+- Two prediction types (as in PREREG_v1.1 "How predictions are judged"):
+  "difference": {"higher": cell, "min_size_points": x} -> HOLDS by the three-part rule above;
+  "about_equal": {"margin_points": m} -> HOLDS only if the 95% interval of (first cell - second cell) lies
+  entirely within +/-m points; the seed-count rule does not apply.
 - "Formal report" = a report filed with the `report` tool (never seen by other agents).
 
 Usage (from repo root): python analysis/v1.2/phase15_analysis.py [--root .] [--out analysis/v1.2]
@@ -66,8 +70,8 @@ class Pred:
 PREDS = [
     Pred("P13a", QWEN, "B-odd-v1", "B-stealth-v1", "cheater", "cheater flags, odd vs stealthy exploit, v1 decoys"),
     Pred("P13b", QWEN, "B-odd-v2", "B-stealth-v2", "cheater", "cheater flags, odd vs stealthy exploit, v2 decoys"),
-    Pred("P14a", QWEN, "B-odd-v1", "B-odd-v2", "decoy", "decoy flags, v1 vs v2 decoys, odd exploit"),
-    Pred("P14b", QWEN, "B-stealth-v1", "B-stealth-v2", "decoy", "decoy flags, v1 vs v2 decoys, stealthy exploit"),
+    Pred("P14a", QWEN, "B-odd-v1", "B-stealth-v1", "decoy", "hex (v1) decoy flags, odd vs stealthy exploit"),
+    Pred("P14b", QWEN, "B-odd-v2", "B-stealth-v2", "decoy", "decimal (v2) decoy flags, odd vs stealthy exploit"),
     Pred("P15", GLM, "E", "B", "decoy", "glm-5.2 decoy flags, E vs B"),
     Pred("P16", GLM, "C", "E", "decoy", "glm-5.2 decoy flags, C vs E"),
 ]
@@ -203,7 +207,10 @@ def load_predictions(path: Path) -> dict:
 def evaluate(p: Pred, spec: dict | None, data: Data, n_boot=N_BOOT, seed=BOOT_SEED) -> dict:
     base = {"pid": p.pid, "primary": p.pid in PRIMARY, "statement": p.statement, "model": p.model,
             "cells": [p.cell_a, p.cell_b], "measure": p.measure}
-    higher, mn = (spec or {}).get("higher"), (spec or {}).get("min_size_points")
+    spec = spec or {}
+    if spec.get("type") == "about_equal":
+        return evaluate_equal(p, spec, base, data, n_boot, seed)
+    higher, mn = spec.get("higher"), spec.get("min_size_points")
     if higher is None or mn is None:
         return {**base, "verdict": "NOT SPECIFIED", "note": "direction or minimum size missing in predictions.json"}
     if higher not in (p.cell_a, p.cell_b):
@@ -223,6 +230,31 @@ def evaluate(p: Pred, spec: dict | None, data: Data, n_boot=N_BOOT, seed=BOOT_SE
     R = np.array([r[2] for r in rows], dtype=float)
     pl, pr = V11.value(tuple(L.sum(0))), V11.value(tuple(R.sum(0)))
     res = V11.judge(L, R, mn / 100, margin_for(pl, pr), n_boot, seed)
+    res["per_seed"] = [{"seed": s, "left": list(map(int, l)), "right": list(map(int, r)), "diff": d}
+                       for (s, l, r), d in zip(rows, res["per_seed_diff"])]
+    res["pooled_left_counts"], res["pooled_right_counts"] = list(map(int, L.sum(0))), list(map(int, R.sum(0)))
+    return {**base, **res}
+
+
+def evaluate_equal(p: Pred, spec: dict, base: dict, data: Data, n_boot=N_BOOT, seed=BOOT_SEED) -> dict:
+    """'About equal' prediction: HOLDS only if the 95% interval of (cell_a - cell_b) is within +/-margin."""
+    m = spec.get("margin_points")
+    if m is None:
+        return {**base, "verdict": "NOT SPECIFIED", "note": "margin missing in predictions.json"}
+    rows, missing = [], []
+    for s in S0_19:
+        ma, mb = data.get(p.model, p.cell_a, s), data.get(p.model, p.cell_b, s)
+        if ma is None or mb is None:
+            missing.append(s)
+            continue
+        rows.append((s, side(ma, p.measure), side(mb, p.measure)))
+    base.update(type="about_equal", left=p.cell_a, right=p.cell_b, equal_margin=m / 100)
+    if missing:
+        return {**base, "verdict": "ONGOING", "missing_seeds": missing, "complete_paired_seeds": len(rows)}
+    L = np.array([r[1] for r in rows], dtype=float)
+    R = np.array([r[2] for r in rows], dtype=float)
+    res = V11.judge(L, R, 0.0, m / 100, n_boot, seed)
+    res["verdict"] = "HOLDS" if res["about_equal"] else "DOES NOT HOLD"
     res["per_seed"] = [{"seed": s, "left": list(map(int, l)), "right": list(map(int, r)), "diff": d}
                        for (s, l, r), d in zip(rows, res["per_seed_diff"])]
     res["pooled_left_counts"], res["pooled_right_counts"] = list(map(int, L.sum(0))), list(map(int, R.sum(0)))
@@ -293,6 +325,11 @@ def render(results, glm, ov, meta) -> str:
             extra = f" ({r['complete_paired_seeds']} complete paired seeds)" if r["verdict"] == "ONGOING" else ""
             L.append(f"| {r['pid']} | {lab} | {r['statement']} | | | | {r['verdict']}{extra} | |")
             continue
+        if r.get("type") == "about_equal":
+            L.append(f"| {r['pid']} | {lab} | {r['model']} {r['left']} - {r['right']}, {r['measure']} flags "
+                     f"(about equal within +/-{100 * r['equal_margin']:.0f}) | {r['n_direction']}/{r['n_seeds']} "
+                     f"(not used) | {V11.pts(r['pooled_diff'])} | {V11.ci_s(r['ci'])} | **{r['verdict']}** | |")
+            continue
         L.append(f"| {r['pid']} | {lab} | {r['model']} {r['left']} - {r['right']}, {r['measure']} flags | "
                  f"{r['n_direction']}/{r['n_seeds']} (need {r['need']}) | {V11.pts(r['pooled_diff'])} | "
                  f"{V11.ci_s(r['ci'])} | **{r['verdict']}** | {'yes' if r['about_equal'] else 'no'} "
@@ -302,6 +339,12 @@ def render(results, glm, ov, meta) -> str:
         L += [f"### {r['pid']} ({'PRIMARY' if r['primary'] else 'SECONDARY'})", "", f"{r['statement']}.", ""]
         if r["verdict"] in ("NOT SPECIFIED", "ONGOING"):
             L += [f"- **{r['verdict']}**: {r.get('note') or 'missing seeds ' + str(r.get('missing_seeds'))}", ""]
+            continue
+        if r.get("type") == "about_equal":
+            L += [f"- {r['left']}: {V11.cnt(r['pooled_left_counts'])}; {r['right']}: {V11.cnt(r['pooled_right_counts'])}",
+                  f"- Pooled difference {V11.pts(r['pooled_diff'])}, 95% interval {V11.ci_s(r['ci'])}",
+                  f"- **Verdict: {r['verdict']}** (about-equal prediction: interval within "
+                  f"+/-{100 * r['equal_margin']:.0f} pts; seed count not used)", ""]
             continue
         c = r["checks"]
         L += [f"- {r['left']}: {V11.cnt(r['pooled_left_counts'])}; {r['right']}: {V11.cnt(r['pooled_right_counts'])}",
