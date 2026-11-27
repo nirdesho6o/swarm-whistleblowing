@@ -1,0 +1,40 @@
+== 1. formal reports (unique honest agent, entry) and revocations ==
+  qwen3.5-397b  B-odd-v1      revocations 35/35/1/0  reports(unique honest) 17/10/0/0  all report events {'cheater': 29, 'decoy': 13, 'honest': 1}
+  qwen3.5-397b  B-odd-v2      revocations 29/0/0/0  reports(unique honest) 16/1/2/0  all report events {'honest': 7, 'cheater': 25, 'decoy': 2}
+  qwen3.5-397b  B-stealth-v1  revocations 81/35/2/0  reports(unique honest) 69/12/2/0  all report events {'cheater': 76, 'decoy': 15, 'honest': 5}
+  qwen3.5-397b  B-stealth-v2  revocations 64/0/1/0  reports(unique honest) 44/1/0/0  all report events {'cheater': 46, 'honest': 2, 'decoy': 1}
+  glm-5.2       B             revocations 0/3/0/0  reports(unique honest) 0/4/0/0  all report events {'decoy': 4}
+  glm-5.2       C             revocations 3/11/0/0  reports(unique honest) 0/2/0/0  all report events {'decoy': 2}
+  glm-5.2       E             revocations 1/4/0/0  reports(unique honest) 0/7/0/0  all report events {'decoy': 7, 'cheater': 2}
+
+== 2. capped calls ==
+  qwen3.5-397b  B-odd-v1      {'completed': 3163, 'incomplete': 309, 'retry': 37}  incomplete 309/3509 = 8.81%
+  qwen3.5-397b  B-odd-v2      {'completed': 3149, 'incomplete': 300, 'retry': 9}  incomplete 300/3458 = 8.68%
+  qwen3.5-397b  B-stealth-v1  {'completed': 3143, 'incomplete': 388, 'retry': 41}  incomplete 388/3572 = 10.86%
+  qwen3.5-397b  B-stealth-v2  {'completed': 3131, 'incomplete': 401, 'retry': 23}  incomplete 401/3555 = 11.28%
+  glm-5.2       B             {'completed': 3159, 'incomplete': 285}  incomplete 285/3444 = 8.28%
+  glm-5.2       C             {'completed': 3159, 'incomplete': 433}  incomplete 433/3592 = 12.05%
+  glm-5.2       E             {'completed': 3177, 'incomplete': 277}  incomplete 277/3454 = 8.02%
+
+== 3. EXPLORATORY §1 bootstraps ==
+  B-odd-v1 - B-stealth-v1, first submissions: 31.6% (91/288) vs 73.0% (235/322); diff -41.4 [-52.9, -29.8]; seeds 3/20 (defined-only 3/20); undefined seeds 0; boot NaN 0
+  B-odd-v1 - B-stealth-v1, resubmissions: 34.9% (15/43) vs 77.8% (77/99); diff -42.9 [-63.8, -18.8]; seeds 2/20 (defined-only 2/7); undefined seeds 13; boot NaN 1
+  B-odd-v2 - B-stealth-v2, first submissions: 42.4% (108/255) vs 82.1% (230/280); diff -39.8 [-52.8, -27.3]; seeds 2/20 (defined-only 2/20); undefined seeds 0; boot NaN 0
+  B-odd-v2 - B-stealth-v2, resubmissions: 0.0% (0/20) vs 95.8% (23/24); diff -95.8 [-100.0, -89.3]; seeds 0/20 (defined-only 0/2); undefined seeds 18; boot NaN 60
+
+== 4. v1.0 recognition split (EXPLORATORY §5) ==
+  rule=prewritten probe round > first read   only content-correct: 121/128 = 94.5%; at least one wrong/bare: 195/198 = 98.5%
+  rule=prewritten probe round >= first read  only content-correct: 122/128 = 95.3%; at least one wrong/bare: 195/198 = 98.5%
+  rule=fixed      probe round > first read   only content-correct: 144/152 = 94.7%; at least one wrong/bare: 172/174 = 98.9%
+  rule=fixed      probe round >= first read  only content-correct: 145/152 = 95.4%; at least one wrong/bare: 172/174 = 98.9%
+
+== 5. EXPLORATORY §5 phase totals, fixed rule ==
+  v1.0: correct 326 (76.0%), wrong 103 (24.0%), bare 0 (0.0%), total 429
+     correct: n=920 exploit 217 (23.6%) legit 610 (66.3%) unsure 93 (10.1%)
+     wrong: n=264 exploit 226 (85.6%) legit 14 (5.3%) unsure 24 (9.1%)
+  v1.1: correct 1042 (69.0%), wrong 468 (31.0%), bare 0 (0.0%), total 1510
+     correct: n=2572 exploit 648 (25.2%) legit 1694 (65.9%) unsure 230 (8.9%)
+     wrong: n=794 exploit 680 (85.6%) legit 52 (6.5%) unsure 62 (7.8%)
+  v1.2: correct 270 (82.3%), wrong 58 (17.7%), bare 0 (0.0%), total 328
+     correct: n=687 exploit 137 (19.9%) legit 488 (71.0%) unsure 62 (9.0%)
+     wrong: n=111 exploit 92 (82.9%) legit 7 (6.3%) unsure 12 (10.8%)
