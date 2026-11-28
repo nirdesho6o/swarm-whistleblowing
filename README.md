@@ -1,6 +1,4 @@
-# Swarm Whistleblowing Sprint
 
-**Apart Swarm Alignment Hackathon, Nov 6–8 2026**
 
 Does giving authority to whistleblowing reports increase false accusations in an AI swarm — and can correlated-agreement (CA) scoring keep reports honest?
 
@@ -167,6 +165,4 @@ pytest tests/ -v
 - **Herding covariate.** Note (2026-11-25): `saw_prior_accusation` is computed for every review, but it is false in all reviews of all v1.0 and v1.1 runs. No agent posted an accusation on the board, and reports are not shown to other agents. Herding therefore cannot be measured in this design; `analysis/exploratory.md` §5 reports no herding effect.
 - **Reports were not public.** The submitted report (PDF) describes reports as public ("file a public report", "reported it publicly"). In the environment, reports made with the `report` tool are seen only by the organizers' log and the removal count; other agents never see them, and the system prompt does not say who sees them. New outputs call them formal reports.
 
-## Preexisting code
 
-All code in this repository was written during the hackathon (Nov 6–8 2026). No preexisting code.
